@@ -28,6 +28,7 @@
     "dompurify": "^3.4.15"
   },
   "overrides": {
-    "js-yaml": "^4.3.2"
+    "js-yaml": "^4.3.2",
+    "test-exclude": "^8.0.0"
   }
 }
