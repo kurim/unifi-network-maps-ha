@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- Protect cameras whose UniFi device info carries a model but no name (reported for G6 Pro Bullet, G6 Turret, G6 PTZ and G180) were all labelled with their model name instead of a per-device name. Bumped `unifi-topology` from 3.2.0 to 3.2.1, which ranks the client hostname above the model string, so these cameras now show their hostname (#303)
+
 ## [0.5.10] - 2026-08-22
 
 ### Added
