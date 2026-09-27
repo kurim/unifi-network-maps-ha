@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.11] - 2026-09-27
+
 ### Fixed
 - Protect cameras whose UniFi device info carries a model but no name (reported for G6 Pro Bullet, G6 Turret, G6 PTZ and G180) were all labelled with their model name instead of a per-device name. Bumped `unifi-topology` from 3.2.0 to 3.2.1, which ranks the client hostname above the model string, so these cameras now show their hostname (#303)
 
@@ -378,7 +380,8 @@ The upcoming 0.2 release will have some major new features.
 ## [0.1.0] - 2026-01-17
 - Initial public release.
 
-[Unreleased]: https://github.com/merlijntishauser/unifi-network-maps-ha/compare/v0.5.10...HEAD
+[Unreleased]: https://github.com/merlijntishauser/unifi-network-maps-ha/compare/v0.5.11...HEAD
+[0.5.11]: https://github.com/merlijntishauser/unifi-network-maps-ha/releases/tag/v0.5.11
 [0.5.10]: https://github.com/merlijntishauser/unifi-network-maps-ha/releases/tag/v0.5.10
 [0.5.8]: https://github.com/merlijntishauser/unifi-network-maps-ha/releases/tag/v0.5.8
 [0.5.7]: https://github.com/merlijntishauser/unifi-network-maps-ha/releases/tag/v0.5.7
