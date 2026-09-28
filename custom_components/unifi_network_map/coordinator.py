@@ -13,6 +13,7 @@ from .api import UniFiNetworkMapClient
 from .const import (
     CONF_API_KEY,
     CONF_CLIENT_SCOPE,
+    CONF_GROUP_BY_VLAN,
     CONF_ICON_SET,
     CONF_INCLUDE_CLIENTS,
     CONF_INCLUDE_PORTS,
@@ -37,6 +38,7 @@ from .const import (
     CONF_WAN_LABEL,
     CONF_WAN_SPEED,
     DEFAULT_CLIENT_SCOPE,
+    DEFAULT_GROUP_BY_VLAN,
     DEFAULT_ICON_SET,
     DEFAULT_INCLUDE_CLIENTS,
     DEFAULT_INCLUDE_PORTS,
@@ -266,6 +268,7 @@ def _build_settings(entry: ConfigEntry) -> RenderSettings:
         client_scope=options.get(CONF_CLIENT_SCOPE, DEFAULT_CLIENT_SCOPE),
         only_unifi=options.get(CONF_ONLY_UNIFI, DEFAULT_ONLY_UNIFI),
         svg_isometric=options.get(CONF_SVG_ISOMETRIC, DEFAULT_SVG_ISOMETRIC),
+        group_by_vlan=options.get(CONF_GROUP_BY_VLAN, DEFAULT_GROUP_BY_VLAN),
         svg_width=options.get(CONF_SVG_WIDTH),
         svg_height=options.get(CONF_SVG_HEIGHT),
         use_cache=options.get(CONF_USE_CACHE, DEFAULT_USE_CACHE),

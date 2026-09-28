@@ -7,7 +7,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-from unifi_topology import SvgOptions
+from unifi_topology import Edge, SvgOptions
 
 from custom_components.unifi_network_map.errors import UniFiNetworkMapError
 from custom_components.unifi_network_map.renderer import (
@@ -40,6 +40,7 @@ from custom_components.unifi_network_map.renderer import (
     _resolve_model_name,
     _select_edges,
     _valid_edge_payload,
+    _vlan_name_map,
 )
 from tests.helpers import build_settings
 
@@ -523,6 +524,22 @@ class TestBuildVlanInfo:
         assert len(result[10]["clients"]) == 20
 
 
+class TestVlanNameMap:
+    """Tests for _vlan_name_map function."""
+
+    def test_maps_vlan_id_to_network_name(self) -> None:
+        clients: list[dict[str, Any]] = [{"name": "Client1", "vlan": 10}]
+        networks: list[dict[str, Any]] = [{"name": "IoT Network", "vlan": 10}]
+        assert _vlan_name_map(clients, networks) == {10: "IoT Network"}
+
+    def test_falls_back_to_generic_name(self) -> None:
+        clients: list[dict[str, Any]] = [{"name": "Client1", "vlan": 10}]
+        assert _vlan_name_map(clients, []) == {10: "VLAN 10"}
+
+    def test_returns_empty_without_clients_or_networks(self) -> None:
+        assert _vlan_name_map(None, []) == {}
+
+
 class TestBuildApClientCounts:
     """Tests for _build_ap_client_counts function."""
 
@@ -761,6 +778,80 @@ class TestIsoRenderOptions:
         settings = build_settings(svg_isometric=False, iso_lighting=True)
         options = self._captured_options(settings)
         assert options.iso_lighting is True
+
+
+class TestGroupByVlanRenderOptions:
+    """Tests for VLAN-grouped SVG layout plumbing."""
+
+    def _edges_with_vlans(self) -> list[Edge]:
+        return [
+            Edge(left="gw", right="sw1", vlans=(1,), active_vlans=(1,)),
+            Edge(left="sw1", right="client-a", vlans=(1,), active_vlans=(1,)),
+            Edge(left="gw", right="sw2", vlans=(20,), active_vlans=(20,)),
+            Edge(
+                left="sw2", right="client-b", vlans=(20,), active_vlans=(20,)
+            ),
+        ]
+
+    def _captured_render_kwargs(
+        self,
+        settings: RenderSettings,
+        edges: list[Edge],
+        vlan_names: dict[int, str] | None,
+    ) -> dict[str, Any]:
+        captured: dict[str, Any] = {}
+
+        def fake_render(*_args: Any, **kwargs: Any) -> str:
+            captured.update(kwargs)
+            return "<svg />"
+
+        render_name = (
+            "render_svg_isometric" if settings.svg_isometric else "render_svg"
+        )
+        with patch(
+            f"custom_components.unifi_network_map.renderer.{render_name}",
+            side_effect=fake_render,
+        ):
+            _render_svg_variant(
+                edges, {}, None, settings, MagicMock(), None, None, vlan_names
+            )
+        return captured
+
+    def test_groups_nodes_by_vlan_when_enabled(self) -> None:
+        settings = build_settings(group_by_vlan=True)
+        vlan_names = {1: "LAN", 20: "Guest"}
+        captured = self._captured_render_kwargs(
+            settings, self._edges_with_vlans(), vlan_names
+        )
+        assert captured["options"].layout_mode == "grouped"
+        assert set(captured["groups"]) == {"LAN", "Guest"}
+        assert captured["group_order"] == ["LAN", "Guest"]
+        assert captured["group_vlan_ids"] == {"LAN": 1, "Guest": 20}
+
+    def test_disabled_by_default(self) -> None:
+        settings = build_settings()
+        captured = self._captured_render_kwargs(
+            settings, self._edges_with_vlans(), {1: "LAN", 20: "Guest"}
+        )
+        assert captured["options"].layout_mode == "physical"
+        assert "groups" not in captured
+
+    def test_ignored_in_isometric_layout(self) -> None:
+        settings = build_settings(group_by_vlan=True, svg_isometric=True)
+        captured = self._captured_render_kwargs(
+            settings, self._edges_with_vlans(), {1: "LAN", 20: "Guest"}
+        )
+        assert captured["options"].layout_mode == "physical"
+        assert "groups" not in captured
+
+    def test_no_op_without_vlan_names(self) -> None:
+        """render_themed_svg never supplies vlan_names; grouping stays off."""
+        settings = build_settings(group_by_vlan=True)
+        captured = self._captured_render_kwargs(
+            settings, self._edges_with_vlans(), None
+        )
+        assert captured["options"].layout_mode == "physical"
+        assert "groups" not in captured
 
 
 class TestRendererErrorHandling:

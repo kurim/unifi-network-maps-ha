@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- New map option "Group by VLAN" (`group_by_vlan`, off by default). Renders devices and clients in separate VLAN lanes with labeled boundaries instead of one flat tree, using `unifi-topology`'s existing grouped-layout support. Applies to the standard (non-isometric) layout only
+
 ## [0.5.11] - 2026-09-27
 
 ### Fixed
