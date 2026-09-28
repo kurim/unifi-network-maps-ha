@@ -56,6 +56,7 @@ def _build_settings(
     include_clients: bool = True,
     show_wan: bool = True,
     svg_isometric: bool = False,
+    group_by_vlan: bool = False,
 ) -> RenderSettings:
     return RenderSettings(
         include_ports=True,
@@ -67,6 +68,7 @@ def _build_settings(
         svg_height=None,
         use_cache=False,
         show_wan=show_wan,
+        group_by_vlan=group_by_vlan,
     )
 
 
@@ -108,6 +110,22 @@ def test_renderer_contract_without_clients(monkeypatch: MonkeyPatch) -> None:
 
 def test_renderer_contract_isometric(monkeypatch: MonkeyPatch) -> None:
     result = _render(monkeypatch, svg_isometric=True)
+    assert result.svg.startswith("<svg")
+    _assert_payload_schema(result.payload)
+
+
+def test_renderer_contract_group_by_vlan(monkeypatch: MonkeyPatch) -> None:
+    """VLAN-grouped layout renders against real unifi-topology grouping."""
+    result = _render(monkeypatch, group_by_vlan=True)
+    assert result.svg.startswith("<svg")
+    _assert_payload_schema(result.payload)
+
+
+def test_renderer_contract_group_by_vlan_isometric_is_noop(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """VLAN grouping only applies to the flat layout, not isometric."""
+    result = _render(monkeypatch, group_by_vlan=True, svg_isometric=True)
     assert result.svg.startswith("<svg")
     _assert_payload_schema(result.payload)
 

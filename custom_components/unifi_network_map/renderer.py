@@ -29,6 +29,7 @@ from unifi_topology import (
     render_svg,
     render_svg_isometric,
 )
+from unifi_topology.model import group_nodes_by_vlan
 
 from .const import LOGGER, PAYLOAD_SCHEMA_VERSION, UNIFI_MODEL_NAMES
 from .data import UniFiNetworkMapData
@@ -45,6 +46,7 @@ class RenderSettings:
     svg_width: int | None
     svg_height: int | None
     use_cache: bool
+    group_by_vlan: bool = False
     svg_theme: str | None = None
     icon_set: str | None = None
     show_wan: bool = True
@@ -126,10 +128,19 @@ def _render_map(
     )
     wan_info = _extract_wan_info(devices, settings)
     vpn_tunnels = _extract_vpn_info(devices, settings)
-    svg = _render_svg(
-        edges, node_types, settings, wan_info, vpn_tunnels, node_names
-    )
     networks = _load_networks(config, settings)
+    vlan_names = (
+        _vlan_name_map(clients, networks) if settings.group_by_vlan else None
+    )
+    svg = _render_svg(
+        edges,
+        node_types,
+        settings,
+        wan_info,
+        vpn_tunnels,
+        node_names,
+        vlan_names,
+    )
     payload = _build_payload(
         edges,
         node_types,
@@ -233,6 +244,16 @@ def _load_networks(
         return []
 
 
+def _vlan_name_map(
+    clients: list[ClientData] | None, networks: list[Mapping[str, Any]]
+) -> dict[int, str]:
+    """Map VLAN id to display name, for SVG VLAN-grouped layout."""
+    return {
+        vlan_id: str(info.get("name") or f"VLAN {vlan_id}")
+        for vlan_id, info in _build_vlan_info(clients, networks).items()
+    }
+
+
 def _render_svg(
     edges: list[Edge],
     node_types: dict[str, str],
@@ -240,6 +261,7 @@ def _render_svg(
     wan_info: WanInfo | None = None,
     vpn_tunnels: list[VpnTunnel] | None = None,
     node_names: dict[str, str] | None = None,
+    vlan_names: dict[int, str] | None = None,
 ) -> str:
     LOGGER.debug(
         "renderer svg_render_started"
@@ -253,7 +275,14 @@ def _render_svg(
     )
     theme = _resolve_svg_theme(settings.svg_theme, settings.icon_set)
     return _render_svg_variant(
-        edges, node_types, node_names, settings, theme, wan_info, vpn_tunnels
+        edges,
+        node_types,
+        node_names,
+        settings,
+        theme,
+        wan_info,
+        vpn_tunnels,
+        vlan_names,
     )
 
 
@@ -265,10 +294,27 @@ def _render_svg_variant(
     theme: SvgTheme,
     wan_info: WanInfo | None,
     vpn_tunnels: list[VpnTunnel] | None,
+    vlan_names: dict[int, str] | None = None,
 ) -> str:
+    layout_mode = "physical"
+    render_kwargs: dict[str, Any] = {}
+    if (
+        settings.group_by_vlan
+        and not settings.svg_isometric
+        and vlan_names is not None
+    ):
+        groups, group_order, group_vlan_ids = group_nodes_by_vlan(
+            edges, vlan_names
+        )
+        if groups:
+            layout_mode = "grouped"
+            render_kwargs["groups"] = groups
+            render_kwargs["group_order"] = group_order
+            render_kwargs["group_vlan_ids"] = group_vlan_ids
     options = SvgOptions(
         width=settings.svg_width,
         height=settings.svg_height,
+        layout_mode=layout_mode,
         iso_lighting=settings.iso_lighting,
         iso_route_around_nodes=settings.iso_route_around_nodes,
         iso_show_grid=settings.iso_show_grid,
@@ -279,6 +325,7 @@ def _render_svg_variant(
         node_types=node_types,
         node_names=node_names,
         options=options,
+        **render_kwargs,
         theme=theme,
         wan_info=wan_info,
         vpn_tunnels=vpn_tunnels or None,
