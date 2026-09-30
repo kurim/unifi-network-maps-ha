@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - New map option "Group by VLAN" (`group_by_vlan`, off by default). Renders devices and clients in separate VLAN lanes with labeled boundaries instead of one flat tree, using `unifi-topology`'s existing grouped-layout support. Applies to the standard (non-isometric) layout only
+- New card option "Fill full height" (`full_height`, off by default). Stretches the card to whatever height its dashboard container already provides instead of a fixed pixel value -- most useful for a Panel (single card) view, where the card previously stayed at its content height rather than filling the viewport
 
 ## [0.5.11] - 2026-09-27
 

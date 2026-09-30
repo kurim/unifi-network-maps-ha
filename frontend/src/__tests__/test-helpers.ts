@@ -7,6 +7,7 @@ export type ConfigurableCard = HTMLElement & {
     entry_id?: string;
     theme?: "dark" | "light" | "unifi" | "unifi-dark";
     card_height?: string | number;
+    full_height?: boolean;
   }) => void;
   connectedCallback?: () => void;
   disconnectedCallback?: () => void;
@@ -34,6 +35,8 @@ export type EditorElement = HTMLElement & {
     theme?: "dark" | "light" | "unifi" | "unifi-dark";
     svg_theme?: "unifi" | "unifi-dark" | "minimal" | "minimal-dark" | "classic" | "classic-dark";
     icon_set?: "modern" | "isometric";
+    card_height?: string | number;
+    full_height?: boolean;
   }) => void;
 };
 

@@ -8,6 +8,24 @@ import {
 import { createLocalize } from "../shared/localize";
 import type { CardConfig, ConfigEntry, FormSchemaEntry, Hass } from "./types";
 
+type ConfigUpdate = {
+  entry_id: string;
+  theme: NonNullable<CardConfig["theme"]>;
+  svg_theme: NonNullable<CardConfig["svg_theme"]>;
+  icon_set: NonNullable<CardConfig["icon_set"]>;
+  card_height?: string | number;
+  full_height?: boolean;
+};
+
+type ConfigFormValue = {
+  entry_id?: string;
+  theme?: string;
+  svg_theme?: string;
+  icon_set?: string;
+  card_height?: string | number;
+  full_height?: boolean;
+};
+
 export class UnifiNetworkMapEditor extends HTMLElement {
   private _config?: CardConfig;
   private _hass?: Hass;
@@ -98,6 +116,7 @@ export class UnifiNetworkMapEditor extends HTMLElement {
       svg_theme: "unifi",
       icon_set: "modern",
       card_height: "",
+      full_height: false,
     };
   }
 
@@ -112,6 +131,7 @@ export class UnifiNetworkMapEditor extends HTMLElement {
     if (cfg.svg_theme !== undefined) result.svg_theme = cfg.svg_theme;
     if (cfg.icon_set !== undefined) result.icon_set = cfg.icon_set;
     if (cfg.card_height !== undefined) result.card_height = cfg.card_height;
+    if (cfg.full_height !== undefined) result.full_height = cfg.full_height;
     return result;
   }
 
@@ -142,7 +162,7 @@ export class UnifiNetworkMapEditor extends HTMLElement {
   }
 
   private _buildFormSchema(): FormSchemaEntry[] {
-    return buildFormSchema(this._entries, this._localize);
+    return buildFormSchema(this._entries, this._localize, this._config?.full_height);
   }
 
   private _onChange(e: Event) {
@@ -162,13 +182,7 @@ export class UnifiNetworkMapEditor extends HTMLElement {
     });
   }
 
-  private _updateConfig(update: {
-    entry_id: string;
-    theme: NonNullable<CardConfig["theme"]>;
-    svg_theme: NonNullable<CardConfig["svg_theme"]>;
-    icon_set: NonNullable<CardConfig["icon_set"]>;
-    card_height?: string | number;
-  }) {
+  private _updateConfig(update: ConfigUpdate) {
     this._config = {
       ...this._config,
       type: "custom:unifi-network-map",
@@ -177,6 +191,7 @@ export class UnifiNetworkMapEditor extends HTMLElement {
       svg_theme: update.svg_theme,
       icon_set: update.icon_set,
       card_height: update.card_height,
+      full_height: update.full_height,
     };
     this.dispatchEvent(
       new CustomEvent("config-changed", {
@@ -187,75 +202,53 @@ export class UnifiNetworkMapEditor extends HTMLElement {
     );
   }
 
-  private _getConfigUpdate(e: Event): {
-    entry_id: string;
-    theme: NonNullable<CardConfig["theme"]>;
-    svg_theme: NonNullable<CardConfig["svg_theme"]>;
-    icon_set: NonNullable<CardConfig["icon_set"]>;
-    card_height?: string | number;
-  } | null {
-    const detail = (
-      e as CustomEvent<{
-        value?: {
-          entry_id?: string;
-          theme?: string;
-          svg_theme?: string;
-          icon_set?: string;
-          card_height?: string | number;
-        };
-      }>
-    ).detail;
+  private _getConfigUpdate(e: Event): ConfigUpdate | null {
+    const detail = (e as CustomEvent<{ value?: ConfigFormValue }>).detail;
     const entryId = this._resolveEntryId(detail.value);
     const themeValue = this._resolveTheme(detail.value);
     const svgThemeValue = detail.value?.svg_theme ?? this._config?.svg_theme;
     const iconSetValue = detail.value?.icon_set ?? this._config?.icon_set;
     const cardHeight = this._resolveCardHeight(detail.value);
+    const fullHeight = this._resolveFullHeight(detail.value);
     return {
       entry_id: entryId,
       theme: normalizeTheme(themeValue),
       svg_theme: normalizeSvgTheme(svgThemeValue),
       icon_set: normalizeIconSet(iconSetValue),
       card_height: cardHeight,
+      full_height: fullHeight,
     };
   }
 
-  private _resolveEntryId(value?: {
-    entry_id?: string;
-    theme?: string;
-    card_height?: string | number;
-  }): string {
+  private _resolveEntryId(value?: ConfigFormValue): string {
     return value?.entry_id ?? this._config?.entry_id ?? "";
   }
 
-  private _resolveTheme(value?: {
-    entry_id?: string;
-    theme?: string;
-    card_height?: string | number;
-  }): string {
+  private _resolveTheme(value?: ConfigFormValue): string {
     return value?.theme ?? this._config?.theme ?? "unifi";
   }
 
-  private _resolveCardHeight(value?: {
-    entry_id?: string;
-    theme?: string;
-    card_height?: string | number;
-  }): string | number | undefined {
+  private _resolveCardHeight(value?: ConfigFormValue): string | number | undefined {
     return value?.card_height ?? this._config?.card_height;
   }
 
-  private _isConfigUnchanged(update: {
-    entry_id: string;
-    theme: NonNullable<CardConfig["theme"]>;
-    svg_theme: NonNullable<CardConfig["svg_theme"]>;
-    icon_set: NonNullable<CardConfig["icon_set"]>;
-    card_height?: string | number;
-  }): boolean {
-    return (
-      this._config?.entry_id === update.entry_id &&
-      this._config?.theme === update.theme &&
-      this._config?.svg_theme === update.svg_theme &&
-      this._config?.icon_set === update.icon_set &&
-      this._config?.card_height === update.card_height
-    );
+  private _resolveFullHeight(value?: ConfigFormValue): boolean | undefined {
+    return value?.full_height ?? this._config?.full_height;
+  }
+
+  private _isConfigUnchanged(update: ConfigUpdate): boolean {
+    const current = this._config;
+    if (!current) {
+      return false;
+    }
+    const keys: (keyof ConfigUpdate)[] = [
+      "entry_id",
+      "theme",
+      "svg_theme",
+      "icon_set",
+      "card_height",
+      "full_height",
+    ];
+    return keys.every((key) => current[key] === update[key]);
   }
 }

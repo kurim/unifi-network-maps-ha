@@ -28,6 +28,7 @@ export const fi = {
   "context_menu.view_ports": "Näytä portit",
   "editor.card_height": "Kortin korkeus (valinnainen)",
   "editor.entry_id": "UniFi-verkkokarttainstanssi",
+  "editor.full_height": "Täytä koko korkeus (esim. paneelinäkymää varten)",
   "editor.no_entries": "UniFi-verkkokarttaintegraatioita ei löytynyt. Lisää ensin sellainen.",
   "editor.theme": "Teema",
   "editor.theme.dark": "Tumma",
