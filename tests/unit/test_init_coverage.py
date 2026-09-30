@@ -117,6 +117,21 @@ def test_frontend_bundle_url_without_bundle() -> None:
         url = _frontend_bundle_url()
     assert url.startswith("/unifi-network-map/unifi-network-map.js")
     assert "?v=" in url
-    # Without a real file the URL should not contain a dash-separated mtime.
+    # Without a real file the URL carries no content hash.
     version = init_module._INTEGRATION_VERSION
     assert url.endswith(f"?v={version}")
+
+
+def test_frontend_bundle_url_changes_with_bundle_content(
+    tmp_path: Path,
+) -> None:
+    bundle = tmp_path / "unifi-network-map.js"
+    bundle.write_text("one")
+    with patch(
+        "custom_components.unifi_network_map._frontend_bundle_path",
+        return_value=bundle,
+    ):
+        first = _frontend_bundle_url()
+        bundle.write_text("two")
+        second = _frontend_bundle_url()
+    assert first != second
