@@ -280,6 +280,48 @@ def _exclude_infrastructure_from_groups(
     return filtered_groups, filtered_order, filtered_vlan_ids
 
 
+def _build_immediate_parent_map(edges: list[Edge]) -> dict[str, str]:
+    """Map each node to its immediate physical parent."""
+    return {edge.right: edge.left for edge in edges}
+
+
+def _split_groups_by_parent(
+    groups: dict[str, list[str]],
+    group_order: list[str],
+    group_vlan_ids: dict[str, int],
+    edges: list[Edge],
+) -> tuple[dict[str, list[str]], list[str], dict[str, int]]:
+    """Split each VLAN group by each member's immediate physical parent.
+
+    group_nodes_by_vlan groups purely by VLAN membership across the whole
+    network, so clients plugged into different switches/APs land in one
+    combined group -- both misleading (a "VLAN 1" box spanning unrelated
+    switches) and, since the switch itself is excluded as infrastructure,
+    leaves the group with no shared parent in the filtered subgraph the
+    boxed layout draws from, which defeats row-wrapping too. Splitting by
+    (VLAN, immediate parent) keeps each box scoped to one physical switch
+    or AP, as a real district under it rather than a synthetic mix.
+    """
+    parent_of = _build_immediate_parent_map(edges)
+    split_groups: dict[str, list[str]] = {}
+    split_order: list[str] = []
+    split_vlan_ids: dict[str, int] = {}
+    for name in group_order:
+        members = groups.get(name, [])
+        if not members:
+            continue
+        by_parent: dict[str, list[str]] = {}
+        for member in members:
+            by_parent.setdefault(parent_of.get(member, ""), []).append(member)
+        for parent in sorted(by_parent):
+            sub_name = f"{name} ({parent})" if parent else name
+            split_groups[sub_name] = by_parent[parent]
+            split_order.append(sub_name)
+            if name in group_vlan_ids:
+                split_vlan_ids[sub_name] = group_vlan_ids[name]
+    return split_groups, split_order, split_vlan_ids
+
+
 def _vlan_name_map(
     clients: list[ClientData] | None, networks: list[Mapping[str, Any]]
 ) -> dict[int, str]:
@@ -342,6 +384,9 @@ def _render_svg_variant(
             _exclude_infrastructure_from_groups(
                 groups, group_order, group_vlan_ids, node_types
             )
+        )
+        groups, group_order, group_vlan_ids = _split_groups_by_parent(
+            groups, group_order, group_vlan_ids, edges
         )
         if groups:
             layout_mode = "grouped"
