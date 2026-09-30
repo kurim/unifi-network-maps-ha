@@ -356,6 +356,9 @@ def render_themed_svg(
     if not edges or not node_types:
         return data.svg, background
     node_names = _payload_str_dict(payload.get("node_names"))
+    vlan_names = (
+        _vlan_names_from_payload(payload) if settings.group_by_vlan else None
+    )
     svg = _render_svg_variant(
         edges,
         node_types,
@@ -364,8 +367,28 @@ def render_themed_svg(
         theme,
         data.wan_info,
         data.vpn_tunnels,
+        vlan_names,
     )
     return svg, background
+
+
+def _vlan_names_from_payload(payload: Mapping[str, Any]) -> dict[int, str]:
+    vlan_info = payload.get("vlan_info")
+    if not isinstance(vlan_info, dict):
+        return {}
+    names: dict[int, str] = {}
+    for key, info in cast("dict[object, object]", vlan_info).items():
+        if not isinstance(info, Mapping):
+            continue
+        try:
+            vlan_id = int(cast("str | int", key))
+        except (TypeError, ValueError):
+            continue
+        name = info.get("name")
+        names[vlan_id] = (
+            str(name) if isinstance(name, str) else f"VLAN {vlan_id}"
+        )
+    return names
 
 
 def _payload_str_dict(value: object) -> dict[str, str]:
@@ -410,7 +433,15 @@ def _edge_from_payload(edge: Mapping[str, object]) -> Edge:
         wireless=wireless_value if isinstance(wireless_value, bool) else False,
         speed=speed_value if isinstance(speed_value, int) else None,
         channel=channel_value if isinstance(channel_value, int) else None,
+        vlans=_int_tuple_from_payload(edge.get("vlans")),
+        active_vlans=_int_tuple_from_payload(edge.get("active_vlans")),
     )
+
+
+def _int_tuple_from_payload(value: object) -> tuple[int, ...]:
+    if not isinstance(value, list):
+        return ()
+    return tuple(item for item in value if isinstance(item, int))
 
 
 def _resolve_svg_theme(svg_theme: str | None, icon_set: str | None):
@@ -570,6 +601,8 @@ def _edge_to_dict(edge: Edge) -> dict[str, Any]:
         "wireless": edge.wireless,
         "speed": edge.speed,
         "channel": edge.channel,
+        "vlans": list(edge.vlans),
+        "active_vlans": list(edge.active_vlans),
     }
 
 
