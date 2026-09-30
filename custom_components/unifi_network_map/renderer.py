@@ -258,9 +258,8 @@ def _exclude_infrastructure_from_groups(
 
     These typically carry traffic for every VLAN on their trunk/uplink
     ports, so the single VLAN a client-edge heuristic infers for them is
-    arbitrary. Leaving them ungrouped keeps the backbone in its normal
-    position; a dashed cross-group edge still shows each grouped client's
-    real connection back to them.
+    arbitrary. Leaving them ungrouped keeps them as plain tree nodes with
+    no box; each grouped client stays in the tree right under its parent.
     """
     filtered_groups: dict[str, list[str]] = {}
     for name, members in groups.items():
@@ -295,12 +294,10 @@ def _split_groups_by_parent(
 
     group_nodes_by_vlan groups purely by VLAN membership across the whole
     network, so clients plugged into different switches/APs land in one
-    combined group -- both misleading (a "VLAN 1" box spanning unrelated
-    switches) and, since the switch itself is excluded as infrastructure,
-    leaves the group with no shared parent in the filtered subgraph the
-    boxed layout draws from, which defeats row-wrapping too. Splitting by
-    (VLAN, immediate parent) keeps each box scoped to one physical switch
-    or AP, as a real district under it rather than a synthetic mix.
+    combined group -- a "VLAN 1" box spanning unrelated switches, which
+    cannot sit under any single parent in the tree. Splitting by (VLAN,
+    immediate parent) gives each switch or AP its own box per VLAN, placed
+    directly beneath it.
     """
     parent_of = _build_immediate_parent_map(edges)
     split_groups: dict[str, list[str]] = {}

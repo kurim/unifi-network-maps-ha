@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import inspect
 import json
 import logging
@@ -288,8 +289,11 @@ def _frontend_bundle_url() -> str:
     version = _INTEGRATION_VERSION
     bundle = _frontend_bundle_path()
     if bundle.exists():
-        mtime = int(bundle.stat().st_mtime)
-        return f"{_frontend_bundle_base_url()}?v={version}-{mtime}"
+        # Content hash, not mtime: an update that keeps timestamps (archive
+        # extraction, copied files) must still change the URL, otherwise
+        # browsers keep serving the previous bundle.
+        digest = hashlib.sha256(bundle.read_bytes()).hexdigest()[:10]
+        return f"{_frontend_bundle_base_url()}?v={version}-{digest}"
     return f"{_frontend_bundle_base_url()}?v={version}"
 
 
