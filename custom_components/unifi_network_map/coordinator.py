@@ -20,6 +20,7 @@ from .const import (
     CONF_ISO_LIGHTING,
     CONF_ISO_ROUTE_AROUND_NODES,
     CONF_ISO_SHOW_GRID,
+    CONF_MAX_NODES_PER_ROW,
     CONF_ONLY_UNIFI,
     CONF_REQUEST_TIMEOUT_SECONDS,
     CONF_SCAN_INTERVAL,
@@ -286,6 +287,7 @@ def _build_settings(entry: ConfigEntry) -> RenderSettings:
             CONF_ISO_ROUTE_AROUND_NODES, DEFAULT_ISO_ROUTE_AROUND_NODES
         ),
         iso_show_grid=options.get(CONF_ISO_SHOW_GRID, DEFAULT_ISO_SHOW_GRID),
+        max_nodes_per_row=options.get(CONF_MAX_NODES_PER_ROW),
     )
 
 

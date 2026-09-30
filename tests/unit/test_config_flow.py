@@ -9,6 +9,7 @@ from custom_components.unifi_network_map import (
 )
 from custom_components.unifi_network_map.const import (
     CONF_API_KEY,
+    CONF_MAX_NODES_PER_ROW,
     CONF_SHOW_WAN,
     CONF_SITE,
     CONF_SVG_HEIGHT,
@@ -321,6 +322,36 @@ def test_normalize_options_invalid_type() -> None:
 
     assert CONF_SVG_HEIGHT in errors
     assert errors[CONF_SVG_HEIGHT] == "expected_int"
+
+
+def test_normalize_options_casts_max_nodes_per_row() -> None:
+    user_input: dict[str, object] = {CONF_MAX_NODES_PER_ROW: " 8 "}
+
+    normalize_options = cast(
+        "Callable["
+        "[dict[str, object]],"
+        " tuple[dict[str, object], dict[str, str]]]",
+        getattr(config_flow_module, "_normalize_options"),
+    )
+    data, errors = normalize_options(user_input)
+
+    assert data[CONF_MAX_NODES_PER_ROW] == 8
+    assert errors == {}
+
+
+def test_normalize_options_strips_empty_max_nodes_per_row() -> None:
+    user_input: dict[str, object] = {CONF_MAX_NODES_PER_ROW: ""}
+
+    normalize_options = cast(
+        "Callable["
+        "[dict[str, object]],"
+        " tuple[dict[str, object], dict[str, str]]]",
+        getattr(config_flow_module, "_normalize_options"),
+    )
+    data, errors = normalize_options(user_input)
+
+    assert CONF_MAX_NODES_PER_ROW not in data
+    assert errors == {}
 
 
 def test_prepare_entry_data_strips_trailing_slash() -> None:

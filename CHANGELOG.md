@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - New map option "Group by VLAN" (`group_by_vlan`, off by default). Renders devices and clients in separate VLAN lanes with labeled boundaries instead of one flat tree, using `unifi-topology`'s existing grouped-layout support. Applies to the standard (non-isometric) layout only
+- **EXPERIMENTAL, testing only -- not for release:** new map option "Max devices per row" (`max_nodes_per_row`). Wraps device/client groups wider than this count into multiple rows instead of one long row, in both the standard and (non-compact) isometric layouts. Requires `unifi-topology`'s not-yet-released `max_nodes_per_row` support, so `manifest.json`/`requirements.txt` temporarily point at `kurim/unifi-topology@claude/max-nodes-per-row` instead of a PyPI release. Revert the requirement pin to a released `unifi-topology` version once that branch is reviewed and published, or drop this entry entirely if it doesn't land
 
 ## [0.5.11] - 2026-09-27
 

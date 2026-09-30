@@ -59,6 +59,7 @@ class RenderSettings:
     iso_lighting: bool = False
     iso_route_around_nodes: bool = False
     iso_show_grid: bool = True
+    max_nodes_per_row: int | None = None
 
 
 class ClientLike(Protocol):
@@ -318,6 +319,7 @@ def _render_svg_variant(
         iso_lighting=settings.iso_lighting,
         iso_route_around_nodes=settings.iso_route_around_nodes,
         iso_show_grid=settings.iso_show_grid,
+        max_nodes_per_row=settings.max_nodes_per_row,
     )
     render = render_svg_isometric if settings.svg_isometric else render_svg
     return render(
