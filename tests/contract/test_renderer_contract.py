@@ -57,6 +57,7 @@ def _build_settings(
     show_wan: bool = True,
     svg_isometric: bool = False,
     group_by_vlan: bool = False,
+    max_nodes_per_row: int | None = None,
 ) -> RenderSettings:
     return RenderSettings(
         include_ports=True,
@@ -69,6 +70,7 @@ def _build_settings(
         use_cache=False,
         show_wan=show_wan,
         group_by_vlan=group_by_vlan,
+        max_nodes_per_row=max_nodes_per_row,
     )
 
 
@@ -121,10 +123,35 @@ def test_renderer_contract_group_by_vlan(monkeypatch: MonkeyPatch) -> None:
     _assert_payload_schema(result.payload)
 
 
-def test_renderer_contract_group_by_vlan_isometric_is_noop(
+def test_renderer_contract_max_nodes_per_row(monkeypatch: MonkeyPatch) -> None:
+    """Row-wrapped layout renders against real unifi-topology wrapping.
+
+    EXPERIMENTAL: exercises unifi-topology's `max_nodes_per_row`, currently
+    only available from the kurim/unifi-topology fork this branch's
+    manifest.json points at for testing -- not yet an upstream release.
+    """
+    result = _render(monkeypatch, max_nodes_per_row=3)
+    assert result.svg.startswith("<svg")
+    _assert_payload_schema(result.payload)
+
+
+def test_renderer_contract_max_nodes_per_row_isometric(
     monkeypatch: MonkeyPatch,
 ) -> None:
-    """VLAN grouping only applies to the flat layout, not isometric."""
+    result = _render(monkeypatch, svg_isometric=True, max_nodes_per_row=3)
+    assert result.svg.startswith("<svg")
+    _assert_payload_schema(result.payload)
+
+
+def test_renderer_contract_group_by_vlan_isometric(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """VLAN grouping also applies to the isometric layout.
+
+    EXPERIMENTAL: exercises unifi-topology's not-yet-released isometric
+    grouped-district positioning, from the kurim/unifi-topology fork this
+    branch's manifest.json points at for testing.
+    """
     result = _render(monkeypatch, group_by_vlan=True, svg_isometric=True)
     assert result.svg.startswith("<svg")
     _assert_payload_schema(result.payload)
