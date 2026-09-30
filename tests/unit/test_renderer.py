@@ -32,6 +32,7 @@ from custom_components.unifi_network_map.renderer import (
     _client_vlan_from_network_name,
     _edge_from_payload,
     _edge_to_dict,
+    _exclude_infrastructure_from_groups,
     _extract_wan_info,
     _is_default_vlan_name,
     _network_name,
@@ -804,6 +805,7 @@ class TestGroupByVlanRenderOptions:
         settings: RenderSettings,
         edges: list[Edge],
         vlan_names: dict[int, str] | None,
+        node_types: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         captured: dict[str, Any] = {}
 
@@ -819,7 +821,14 @@ class TestGroupByVlanRenderOptions:
             side_effect=fake_render,
         ):
             _render_svg_variant(
-                edges, {}, None, settings, MagicMock(), None, None, vlan_names
+                edges,
+                node_types or {},
+                None,
+                settings,
+                MagicMock(),
+                None,
+                None,
+                vlan_names,
             )
         return captured
 
@@ -842,13 +851,13 @@ class TestGroupByVlanRenderOptions:
         assert captured["options"].layout_mode == "physical"
         assert "groups" not in captured
 
-    def test_ignored_in_isometric_layout(self) -> None:
+    def test_also_applies_in_isometric_layout(self) -> None:
         settings = build_settings(group_by_vlan=True, svg_isometric=True)
         captured = self._captured_render_kwargs(
             settings, self._edges_with_vlans(), {1: "LAN", 20: "Guest"}
         )
-        assert captured["options"].layout_mode == "physical"
-        assert "groups" not in captured
+        assert captured["options"].layout_mode == "grouped"
+        assert set(captured["groups"]) == {"LAN", "Guest"}
 
     def test_no_op_without_vlan_names(self) -> None:
         """A caller that can't resolve VLAN names (vlan_names=None) skips
@@ -860,6 +869,88 @@ class TestGroupByVlanRenderOptions:
         )
         assert captured["options"].layout_mode == "physical"
         assert "groups" not in captured
+
+    def test_infrastructure_devices_stay_out_of_groups(self) -> None:
+        """Gateway/switch typically carry every VLAN on their trunk ports,
+        so the VLAN a client-edge heuristic infers for them is arbitrary --
+        only client leaves should end up in a VLAN box.
+        """
+        node_types = {
+            "gw": "gateway",
+            "sw1": "switch",
+            "sw2": "switch",
+            "client-a": "client",
+            "client-b": "client",
+        }
+        settings = build_settings(group_by_vlan=True)
+        captured = self._captured_render_kwargs(
+            settings,
+            self._edges_with_vlans(),
+            {1: "LAN", 20: "Guest"},
+            node_types,
+        )
+        assert captured["groups"] == {
+            "LAN": ["client-a"],
+            "Guest": ["client-b"],
+        }
+
+    def test_falls_back_to_physical_when_only_infrastructure_grouped(
+        self,
+    ) -> None:
+        """If every node a VLAN heuristic would group is infrastructure,
+        there is nothing left to box -- render the plain ungrouped layout.
+        """
+        edges = [Edge(left="gw", right="sw1", vlans=(1,), active_vlans=(1,))]
+        node_types = {"gw": "gateway", "sw1": "switch"}
+        settings = build_settings(group_by_vlan=True)
+        captured = self._captured_render_kwargs(
+            settings, edges, {1: "LAN"}, node_types
+        )
+        assert captured["options"].layout_mode == "physical"
+        assert "groups" not in captured
+
+
+class TestExcludeInfrastructureFromGroups:
+    """Tests for _exclude_infrastructure_from_groups."""
+
+    def test_removes_gateway_switch_and_ap_from_groups(self) -> None:
+        groups = {
+            "LAN": ["gw", "sw1", "client-a"],
+            "Guest": ["ap1", "client-b"],
+        }
+        node_types = {
+            "gw": "gateway",
+            "sw1": "switch",
+            "ap1": "ap",
+            "client-a": "client",
+            "client-b": "client",
+        }
+        filtered, order, vlan_ids = _exclude_infrastructure_from_groups(
+            groups, ["LAN", "Guest"], {"LAN": 1, "Guest": 20}, node_types
+        )
+        assert filtered == {"LAN": ["client-a"], "Guest": ["client-b"]}
+        assert order == ["LAN", "Guest"]
+        assert vlan_ids == {"LAN": 1, "Guest": 20}
+
+    def test_drops_group_left_empty_after_filtering(self) -> None:
+        groups = {"Infra": ["gw", "sw1"], "LAN": ["client-a"]}
+        node_types = {"gw": "gateway", "sw1": "switch", "client-a": "client"}
+        filtered, order, vlan_ids = _exclude_infrastructure_from_groups(
+            groups, ["Infra", "LAN"], {"Infra": 1, "LAN": 20}, node_types
+        )
+        assert filtered == {"LAN": ["client-a"]}
+        assert order == ["LAN"]
+        assert vlan_ids == {"LAN": 20}
+
+    def test_unknown_node_type_is_kept(self) -> None:
+        """A node missing from node_types (defensive default) is treated
+        as non-infrastructure rather than silently dropped.
+        """
+        groups = {"LAN": ["mystery-node"]}
+        filtered, _order, _vlan_ids = _exclude_infrastructure_from_groups(
+            groups, ["LAN"], {"LAN": 1}, {}
+        )
+        assert filtered == {"LAN": ["mystery-node"]}
 
 
 class TestRendererErrorHandling:

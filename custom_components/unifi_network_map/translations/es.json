@@ -132,7 +132,7 @@
           "client_scope": "Elige clientes cableados, inalámbricos o todos.",
           "only_unifi": "Oculta dispositivos que no sean UniFi en la topología.",
           "svg_isometric": "Renderiza una vista con estilo 3D.",
-          "group_by_vlan": "Agrupa dispositivos y clientes en bloques de VLAN en lugar de un diseño plano único. No se usa con el diseño isométrico.",
+          "group_by_vlan": "Agrupa dispositivos y clientes en bloques de VLAN en lugar de un diseño plano único. Funciona con el diseño estándar y el isométrico.",
           "svg_theme": "Tema de color del mapa renderizado.",
           "icon_set": "Estilo de iconos para los nodos de dispositivos.",
           "iso_lighting": "Sombrea las caras laterales y añade sombras de contacto (solo diseño isométrico).",

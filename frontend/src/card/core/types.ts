@@ -27,6 +27,7 @@ export type CardConfig = {
   svg_theme?: "unifi" | "unifi-dark" | "minimal" | "minimal-dark" | "classic" | "classic-dark";
   icon_set?: "isometric" | "modern";
   card_height?: string | number;
+  full_height?: boolean;
 };
 
 export type ConfigEntry = {
@@ -94,6 +95,7 @@ export type Neighbor = {
 export type FormSchemaEntry = {
   name: string;
   required?: boolean;
+  disabled?: boolean;
   selector: {
     select?: {
       mode: string;
@@ -104,6 +106,7 @@ export type FormSchemaEntry = {
       prefix?: string;
       suffix?: string;
     };
+    boolean?: Record<string, never>;
   };
   label: string;
 };

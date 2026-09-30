@@ -132,7 +132,7 @@
           "client_scope": "Valitse langalliset, langattomat tai kaikki asiakkaat.",
           "only_unifi": "Piilota muut kuin UniFi-laitteet topologiasta.",
           "svg_isometric": "Piirrä 3D-tyylinen näkymä.",
-          "group_by_vlan": "Ryhmittelee laitteet ja asiakkaat VLAN-lohkoihin yhden tasomaisen asettelun sijaan. Ei käytetä isometrisen asettelun kanssa.",
+          "group_by_vlan": "Ryhmittelee laitteet ja asiakkaat VLAN-lohkoihin yhden tasomaisen asettelun sijaan. Toimii sekä vakio- että isometrisessä asettelussa.",
           "svg_theme": "Renderöidyn kartan väriteema.",
           "icon_set": "Laitesolmujen kuvaketyyli.",
           "iso_lighting": "Varjostaa sivupinnat ja lisää kontaktivarjot (vain isometrinen asettelu).",

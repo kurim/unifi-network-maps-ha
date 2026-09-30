@@ -132,7 +132,7 @@
           "client_scope": "Wähle kabelgebundene, drahtlose oder alle Clients.",
           "only_unifi": "Blendet Nicht-UniFi-Geräte in der Topologie aus.",
           "svg_isometric": "Rendert eine 3D-ähnliche Ansicht.",
-          "group_by_vlan": "Gruppiert Geräte und Clients in VLAN-Blöcke statt in einem einzigen flachen Layout. Wird bei isometrischem Layout nicht verwendet.",
+          "group_by_vlan": "Gruppiert Geräte und Clients in VLAN-Blöcke statt in einem einzigen flachen Layout. Funktioniert sowohl im Standard- als auch im isometrischen Layout.",
           "svg_theme": "Farbthema für die gerenderte Karte.",
           "icon_set": "Symbolstil für Geräteknoten.",
           "iso_lighting": "Schattiert Seitenflächen und fügt Kontaktschatten hinzu (nur isometrisches Layout).",

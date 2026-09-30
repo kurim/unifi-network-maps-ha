@@ -88,6 +88,45 @@ describe("unifi-network-map editor", () => {
     expect(detail.config.theme).toBe("unifi");
   });
 
+  it("includes a full_height toggle and disables card_height once it is on", async () => {
+    const element = document.createElement("unifi-network-map-editor") as EditorElement;
+    const entries: ConfigEntry[] = [
+      { entry_id: "entry-1", title: "Site 1", domain: "unifi_network_map" },
+    ];
+    element.setConfig({ entry_id: "entry-1", theme: "unifi", full_height: true });
+    element.hass = { callWS: jest.fn().mockResolvedValue(entries) };
+    await flushPromises();
+    const form = element.querySelector("ha-form") as HTMLElement & {
+      schema?: Array<{ name: string; disabled?: boolean; selector: Record<string, unknown> }>;
+      data?: { full_height?: boolean };
+    };
+    const cardHeightEntry = form.schema?.find((entry) => entry.name === "card_height");
+    const fullHeightEntry = form.schema?.find((entry) => entry.name === "full_height");
+    expect(cardHeightEntry?.disabled).toBe(true);
+    expect(fullHeightEntry?.selector).toEqual({ boolean: {} });
+    expect(form.data?.full_height).toBe(true);
+  });
+
+  it("dispatches full_height changes from the form", async () => {
+    const element = document.createElement("unifi-network-map-editor") as EditorElement;
+    const callWS = jest
+      .fn()
+      .mockResolvedValue([{ entry_id: "entry-1", title: "Site", domain: "unifi_network_map" }]);
+    element.setConfig({ entry_id: "entry-1", theme: "unifi" });
+    element.hass = { callWS };
+    await flushPromises();
+    const handler = jest.fn();
+    element.addEventListener("config-changed", handler);
+    const form = element.querySelector("ha-form") as HTMLElement;
+    form.dispatchEvent(
+      new CustomEvent("value-changed", {
+        detail: { value: { entry_id: "entry-1", theme: "unifi", full_height: true } },
+      }),
+    );
+    const detail = (handler.mock.calls[0][0] as CustomEvent).detail;
+    expect(detail.config.full_height).toBe(true);
+  });
+
   it("skips loading entries when hass callWS is missing", async () => {
     const element = document.createElement("unifi-network-map-editor") as EditorElement;
     element.hass = {};

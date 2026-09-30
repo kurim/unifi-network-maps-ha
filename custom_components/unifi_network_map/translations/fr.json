@@ -132,7 +132,7 @@
           "client_scope": "Choisissez les clients filaires, sans fil ou tous.",
           "only_unifi": "Masque les appareils non UniFi dans la topologie.",
           "svg_isometric": "Rend une vue de style 3D.",
-          "group_by_vlan": "Regroupe les appareils et les clients en blocs de VLAN au lieu d'une disposition plate unique. Non utilisé avec la disposition isométrique.",
+          "group_by_vlan": "Regroupe les appareils et les clients en blocs de VLAN au lieu d'une disposition plate unique. Fonctionne avec la disposition standard et isométrique.",
           "svg_theme": "Thème de couleurs de la carte générée.",
           "icon_set": "Style d'icônes pour les nœuds d'appareils.",
           "iso_lighting": "Ombre les faces latérales et ajoute des ombres de contact (disposition isométrique uniquement).",

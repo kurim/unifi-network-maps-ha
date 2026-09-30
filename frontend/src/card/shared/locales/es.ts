@@ -29,6 +29,7 @@ export const es = {
   "context_menu.view_ports": "Ver puertos",
   "editor.card_height": "Altura de la tarjeta (opcional)",
   "editor.entry_id": "Instancia de UniFi Network Map",
+  "editor.full_height": "Rellenar altura completa (p. ej. para la vista de panel)",
   "editor.no_entries": "No se encontraron integraciones de UniFi Network Map. Añade una primero.",
   "editor.theme": "Tema",
   "editor.theme.dark": "Oscuro",

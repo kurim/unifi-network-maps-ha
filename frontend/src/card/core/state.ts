@@ -15,6 +15,7 @@ export function normalizeConfig(config: CardConfig): CardConfig {
       svg_url: `/api/${DOMAIN}/${config.entry_id}/svg${queryParams}`,
       data_url: `/api/${DOMAIN}/${config.entry_id}/payload`,
       card_height: config.card_height,
+      full_height: config.full_height,
     };
   }
   return config;

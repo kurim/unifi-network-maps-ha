@@ -28,6 +28,7 @@ export const nl = {
   "context_menu.view_ports": "Poorten bekijken",
   "editor.card_height": "Kaarthoogte (optioneel)",
   "editor.entry_id": "UniFi Network Map-instantie",
+  "editor.full_height": "Volledige hoogte vullen (bijv. voor paneelweergave)",
   "editor.no_entries": "Geen UniFi Network Map-integraties gevonden. Voeg er eerst één toe.",
   "editor.theme": "Thema",
   "editor.theme.dark": "Donker",
