@@ -132,7 +132,7 @@
           "client_scope": "Välj tråd, trådlösa eller alla klienter.",
           "only_unifi": "Dölj enheter som inte är UniFi i topologin.",
           "svg_isometric": "Rendera en 3D-liknande vy.",
-          "group_by_vlan": "Grupperar enheter och klienter i VLAN-block istället för en enda platt layout. Används inte med isometrisk layout.",
+          "group_by_vlan": "Grupperar enheter och klienter i VLAN-block istället för en enda platt layout. Fungerar med både standard- och isometrisk layout.",
           "svg_theme": "Färgtema för den renderade kartan.",
           "icon_set": "Ikonstil för enhetsnoder.",
           "iso_lighting": "Skuggar sidoytor och lägger till kontaktskuggor (endast isometrisk layout).",

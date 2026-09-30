@@ -132,7 +132,7 @@
           "client_scope": "Kies bekabelde, draadloze of alle clients.",
           "only_unifi": "Verberg niet-UniFi-apparaten in de topologie.",
           "svg_isometric": "Render een 3D-achtige weergave.",
-          "group_by_vlan": "Groepeert apparaten en clients in VLAN-blokken in plaats van één platte lay-out. Wordt niet gebruikt met isometrische lay-out.",
+          "group_by_vlan": "Groepeert apparaten en clients in VLAN-blokken in plaats van één platte lay-out. Werkt zowel met de standaard als de isometrische lay-out.",
           "svg_theme": "Kleurthema voor de gerenderde kaart.",
           "icon_set": "Icoonstijl voor apparaatknooppunten.",
           "iso_lighting": "Geeft zijvlakken schaduw en voegt contactschaduwen toe (alleen isometrische lay-out).",

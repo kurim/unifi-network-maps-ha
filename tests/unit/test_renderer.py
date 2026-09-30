@@ -842,13 +842,13 @@ class TestGroupByVlanRenderOptions:
         assert captured["options"].layout_mode == "physical"
         assert "groups" not in captured
 
-    def test_ignored_in_isometric_layout(self) -> None:
+    def test_also_applies_in_isometric_layout(self) -> None:
         settings = build_settings(group_by_vlan=True, svg_isometric=True)
         captured = self._captured_render_kwargs(
             settings, self._edges_with_vlans(), {1: "LAN", 20: "Guest"}
         )
-        assert captured["options"].layout_mode == "physical"
-        assert "groups" not in captured
+        assert captured["options"].layout_mode == "grouped"
+        assert set(captured["groups"]) == {"LAN", "Guest"}
 
     def test_no_op_without_vlan_names(self) -> None:
         """A caller that can't resolve VLAN names (vlan_names=None) skips

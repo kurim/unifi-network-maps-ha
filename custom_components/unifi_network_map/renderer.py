@@ -299,11 +299,7 @@ def _render_svg_variant(
 ) -> str:
     layout_mode = "physical"
     render_kwargs: dict[str, Any] = {}
-    if (
-        settings.group_by_vlan
-        and not settings.svg_isometric
-        and vlan_names is not None
-    ):
+    if settings.group_by_vlan and vlan_names is not None:
         groups, group_order, group_vlan_ids = group_nodes_by_vlan(
             edges, vlan_names
         )

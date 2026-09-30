@@ -132,7 +132,7 @@
           "client_scope": "Vælg kablede, trådløse eller alle klienter.",
           "only_unifi": "Skjul enheder der ikke er UniFi i topologien.",
           "svg_isometric": "Gengiv en 3D-lignende visning.",
-          "group_by_vlan": "Grupperer enheder og klienter i VLAN-blokke i stedet for ét fladt layout. Bruges ikke med isometrisk layout.",
+          "group_by_vlan": "Grupperer enheder og klienter i VLAN-blokke i stedet for ét fladt layout. Fungerer med både standard- og isometrisk layout.",
           "svg_theme": "Farvetema for det renderede kort.",
           "icon_set": "Ikonstil for enhedsnoder.",
           "iso_lighting": "Skygger sideflader og tilføjer kontaktskygger (kun isometrisk layout).",
