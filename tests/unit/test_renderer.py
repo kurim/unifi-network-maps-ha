@@ -81,6 +81,8 @@ class MockEdge:
     wireless: bool | None = None
     speed: int | None = None
     channel: int | None = None
+    vlans: tuple[int, ...] = ()
+    active_vlans: tuple[int, ...] = ()
 
 
 @dataclass
@@ -401,6 +403,8 @@ class TestEdgeToDict:
             "wireless": False,
             "speed": 1000,
             "channel": None,
+            "vlans": [],
+            "active_vlans": [],
         }
 
 
@@ -845,7 +849,9 @@ class TestGroupByVlanRenderOptions:
         assert "groups" not in captured
 
     def test_no_op_without_vlan_names(self) -> None:
-        """render_themed_svg never supplies vlan_names; grouping stays off."""
+        """A caller that can't resolve VLAN names (vlan_names=None) skips
+        grouping rather than falling back to generic "VLAN {id}" names.
+        """
         settings = build_settings(group_by_vlan=True)
         captured = self._captured_render_kwargs(
             settings, self._edges_with_vlans(), None
@@ -1096,6 +1102,62 @@ class TestRenderThemedSvg:
         assert svg == "themed"
         assert background
 
+    def test_group_by_vlan_reaches_the_card_endpoint(self) -> None:
+        """Regression guard: the live card always hits this themed
+        re-render path (it sends svg_theme/icon_set on every load), so
+        group_by_vlan must work here too, not just on the first render.
+        """
+        from unifi_topology import WanInfo
+
+        from custom_components.unifi_network_map import renderer
+        from custom_components.unifi_network_map.data import (
+            UniFiNetworkMapData,
+        )
+
+        data = UniFiNetworkMapData(
+            svg="<svg original />",
+            payload={
+                "edges": [
+                    {
+                        "left": "gw",
+                        "right": "client-a",
+                        "vlans": [1],
+                        "active_vlans": [1],
+                    },
+                    {
+                        "left": "gw",
+                        "right": "client-b",
+                        "vlans": [20],
+                        "active_vlans": [20],
+                    },
+                ],
+                "node_types": {
+                    "gw": "gateway",
+                    "client-a": "client",
+                    "client-b": "client",
+                },
+                "node_names": {},
+                "vlan_info": {
+                    1: {"id": 1, "name": "LAN"},
+                    20: {"id": 20, "name": "Guest"},
+                },
+            },
+            wan_info=WanInfo(),
+            vpn_tunnels=[],
+        )
+        settings = build_settings(group_by_vlan=True)
+        captured: dict[str, Any] = {}
+
+        def _fake_render(*_args: Any, **kwargs: Any) -> str:
+            captured.update(kwargs)
+            return "themed"
+
+        with patch.object(renderer, "render_svg", _fake_render):
+            renderer.render_themed_svg(data, settings, "unifi", None)
+
+        assert captured["options"].layout_mode == "grouped"
+        assert set(captured["groups"]) == {"LAN", "Guest"}
+
 
 def test_render_map_fetches_clients_once(
     monkeypatch: pytest.MonkeyPatch,
@@ -1181,6 +1243,23 @@ class TestEdgeFromPayload:
         payload = {"left": "nodeA", "right": "nodeB", "channel": 36}
         edge = _edge_from_payload(payload)
         assert edge.channel == 36
+
+    def test_includes_vlans(self) -> None:
+        payload = {
+            "left": "nodeA",
+            "right": "nodeB",
+            "vlans": [1, 20],
+            "active_vlans": [20],
+        }
+        edge = _edge_from_payload(payload)
+        assert edge.vlans == (1, 20)
+        assert edge.active_vlans == (20,)
+
+    def test_missing_vlans_default_to_empty(self) -> None:
+        payload = {"left": "nodeA", "right": "nodeB"}
+        edge = _edge_from_payload(payload)
+        assert edge.vlans == ()
+        assert edge.active_vlans == ()
 
     def test_ignores_invalid_types(self) -> None:
         payload = {
