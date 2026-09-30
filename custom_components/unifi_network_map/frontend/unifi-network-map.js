@@ -3769,7 +3769,8 @@ function normalizeConfig(config) {
       icon_set: iconSet,
       svg_url: `/api/${DOMAIN}/${config.entry_id}/svg${queryParams}`,
       data_url: `/api/${DOMAIN}/${config.entry_id}/payload`,
-      card_height: config.card_height
+      card_height: config.card_height,
+      full_height: config.full_height
     };
   }
   return config;
@@ -3818,6 +3819,7 @@ var da = {
   "context_menu.view_ports": "Vis porte",
   "editor.card_height": "Korth\xF8jde (valgfrit)",
   "editor.entry_id": "UniFi Network Map-instans",
+  "editor.full_height": "Udfyld fuld h\xF8jde (f.eks. til panelvisning)",
   "editor.no_entries": "Ingen UniFi Network Map-integrationer fundet. Tilf\xF8j venligst en f\xF8rst.",
   "editor.theme": "Tema",
   "editor.theme.dark": "M\xF8rk",
@@ -3951,6 +3953,7 @@ var de = {
   "context_menu.view_ports": "Ports anzeigen",
   "editor.card_height": "Kartenh\xF6he (optional)",
   "editor.entry_id": "UniFi Network Map-Instanz",
+  "editor.full_height": "Volle H\xF6he ausf\xFCllen (z. B. f\xFCr Panel-Ansicht)",
   "editor.no_entries": "Keine UniFi Network Map-Integrationen gefunden. Bitte zuerst eine hinzuf\xFCgen.",
   "editor.theme": "Thema",
   "editor.theme.dark": "Dunkel",
@@ -4084,6 +4087,7 @@ var en = {
   "context_menu.view_ports": "View Ports",
   "editor.card_height": "Card height (optional)",
   "editor.entry_id": "UniFi Network Map Instance",
+  "editor.full_height": "Fill full height (e.g. for Panel view)",
   "editor.no_entries": "No UniFi Network Map integrations found. Please add one first.",
   "editor.theme": "Theme",
   "editor.theme.dark": "Dark",
@@ -4217,6 +4221,7 @@ var es = {
   "context_menu.view_ports": "Ver puertos",
   "editor.card_height": "Altura de la tarjeta (opcional)",
   "editor.entry_id": "Instancia de UniFi Network Map",
+  "editor.full_height": "Rellenar altura completa (p. ej. para la vista de panel)",
   "editor.no_entries": "No se encontraron integraciones de UniFi Network Map. A\xF1ade una primero.",
   "editor.theme": "Tema",
   "editor.theme.dark": "Oscuro",
@@ -4350,6 +4355,7 @@ var fi = {
   "context_menu.view_ports": "N\xE4yt\xE4 portit",
   "editor.card_height": "Kortin korkeus (valinnainen)",
   "editor.entry_id": "UniFi-verkkokarttainstanssi",
+  "editor.full_height": "T\xE4yt\xE4 koko korkeus (esim. paneelin\xE4kym\xE4\xE4 varten)",
   "editor.no_entries": "UniFi-verkkokarttaintegraatioita ei l\xF6ytynyt. Lis\xE4\xE4 ensin sellainen.",
   "editor.theme": "Teema",
   "editor.theme.dark": "Tumma",
@@ -4483,6 +4489,7 @@ var fr = {
   "context_menu.view_ports": "Voir les ports",
   "editor.card_height": "Hauteur de la carte (optionnel)",
   "editor.entry_id": "Instance UniFi Network Map",
+  "editor.full_height": "Remplir toute la hauteur (ex. pour la vue Panneau)",
   "editor.no_entries": "Aucune int\xE9gration UniFi Network Map trouv\xE9e. Ajoutez-en une d\u2019abord.",
   "editor.theme": "Th\xE8me",
   "editor.theme.dark": "Sombre",
@@ -4616,6 +4623,7 @@ var is = {
   "context_menu.view_ports": "Sko\xF0a g\xE1ttir",
   "editor.card_height": "H\xE6\xF0 spjalds (valfrj\xE1lst)",
   "editor.entry_id": "UniFi Network Map tilvik",
+  "editor.full_height": "Fylla alla h\xE6\xF0 (t.d. fyrir spjalds\xFDn)",
   "editor.no_entries": "Engar UniFi Network Map sam\xFE\xE6ttingar fundust. B\xE6ttu einni vi\xF0 fyrst.",
   "editor.theme": "\xDEema",
   "editor.theme.dark": "D\xF6kkt",
@@ -4749,6 +4757,7 @@ var nb = {
   "context_menu.view_ports": "Vis porter",
   "editor.card_height": "Korthoyde (valgfritt)",
   "editor.entry_id": "UniFi Network Map-instans",
+  "editor.full_height": "Fyll full hoyde (f.eks. for panelvisning)",
   "editor.no_entries": "Ingen UniFi Network Map-integrasjoner funnet. Legg til en forst.",
   "editor.theme": "Tema",
   "editor.theme.dark": "Mork",
@@ -4882,6 +4891,7 @@ var nl = {
   "context_menu.view_ports": "Poorten bekijken",
   "editor.card_height": "Kaarthoogte (optioneel)",
   "editor.entry_id": "UniFi Network Map-instantie",
+  "editor.full_height": "Volledige hoogte vullen (bijv. voor paneelweergave)",
   "editor.no_entries": "Geen UniFi Network Map-integraties gevonden. Voeg er eerst \xE9\xE9n toe.",
   "editor.theme": "Thema",
   "editor.theme.dark": "Donker",
@@ -5015,6 +5025,7 @@ var sv = {
   "context_menu.view_ports": "Visa portar",
   "editor.card_height": "Korth\xF6jd (valfritt)",
   "editor.entry_id": "UniFi Network Map-instans",
+  "editor.full_height": "Fyll hela h\xF6jden (t.ex. f\xF6r panelvy)",
   "editor.no_entries": "Inga UniFi Network Map-integrationer hittades. L\xE4gg till en f\xF6rst.",
   "editor.theme": "Tema",
   "editor.theme.dark": "M\xF6rkt",
@@ -6929,16 +6940,18 @@ var UnifiNetworkMapCard = class extends HTMLElement {
     this._wireInteractions();
   }
   _applyCardHeight(card) {
-    if (this.closest("hui-card-edit-mode")) {
+    if (this._config?.full_height || this.closest("hui-card-edit-mode")) {
       this.style.height = "100%";
       card.style.height = "100%";
       return;
     }
     const height = normalizeCardHeight(this._config?.card_height);
     if (!height) {
+      this.style.removeProperty("height");
       card.style.removeProperty("height");
       return;
     }
+    this.style.removeProperty("height");
     card.style.height = height;
   }
   async _loadSvg() {
@@ -7798,7 +7811,7 @@ var UnifiNetworkMapCard = class extends HTMLElement {
 };
 
 // src/card/shared/editor-helpers.ts
-function buildFormSchema(entries2, localize) {
+function buildFormSchema(entries2, localize, fullHeight) {
   const entryOptions = entries2.map((entry) => ({
     label: entry.title,
     value: entry.entry_id
@@ -7857,6 +7870,7 @@ function buildFormSchema(entries2, localize) {
     },
     {
       name: "card_height",
+      disabled: fullHeight,
       selector: {
         text: {
           type: "text",
@@ -7864,6 +7878,11 @@ function buildFormSchema(entries2, localize) {
         }
       },
       label: localize("editor.card_height")
+    },
+    {
+      name: "full_height",
+      selector: { boolean: {} },
+      label: localize("editor.full_height")
     }
   ];
 }
@@ -7954,7 +7973,8 @@ var UnifiNetworkMapEditor = class extends HTMLElement {
       theme: "unifi",
       svg_theme: "unifi",
       icon_set: "modern",
-      card_height: ""
+      card_height: "",
+      full_height: false
     };
   }
   _getConfigFormValues() {
@@ -7968,6 +7988,7 @@ var UnifiNetworkMapEditor = class extends HTMLElement {
     if (cfg.svg_theme !== void 0) result.svg_theme = cfg.svg_theme;
     if (cfg.icon_set !== void 0) result.icon_set = cfg.icon_set;
     if (cfg.card_height !== void 0) result.card_height = cfg.card_height;
+    if (cfg.full_height !== void 0) result.full_height = cfg.full_height;
     return result;
   }
   _renderNoEntries() {
@@ -7994,7 +8015,7 @@ var UnifiNetworkMapEditor = class extends HTMLElement {
     this._form.addEventListener("value-changed", this._boundOnChange);
   }
   _buildFormSchema() {
-    return buildFormSchema(this._entries, this._localize);
+    return buildFormSchema(this._entries, this._localize, this._config?.full_height);
   }
   _onChange(e) {
     const update = this._getConfigUpdate(e);
@@ -8019,7 +8040,8 @@ var UnifiNetworkMapEditor = class extends HTMLElement {
       theme: update.theme,
       svg_theme: update.svg_theme,
       icon_set: update.icon_set,
-      card_height: update.card_height
+      card_height: update.card_height,
+      full_height: update.full_height
     };
     this.dispatchEvent(
       new CustomEvent("config-changed", {
@@ -8036,12 +8058,14 @@ var UnifiNetworkMapEditor = class extends HTMLElement {
     const svgThemeValue = detail.value?.svg_theme ?? this._config?.svg_theme;
     const iconSetValue = detail.value?.icon_set ?? this._config?.icon_set;
     const cardHeight = this._resolveCardHeight(detail.value);
+    const fullHeight = this._resolveFullHeight(detail.value);
     return {
       entry_id: entryId,
       theme: normalizeTheme(themeValue),
       svg_theme: normalizeSvgTheme(svgThemeValue),
       icon_set: normalizeIconSet(iconSetValue),
-      card_height: cardHeight
+      card_height: cardHeight,
+      full_height: fullHeight
     };
   }
   _resolveEntryId(value) {
@@ -8053,8 +8077,23 @@ var UnifiNetworkMapEditor = class extends HTMLElement {
   _resolveCardHeight(value) {
     return value?.card_height ?? this._config?.card_height;
   }
+  _resolveFullHeight(value) {
+    return value?.full_height ?? this._config?.full_height;
+  }
   _isConfigUnchanged(update) {
-    return this._config?.entry_id === update.entry_id && this._config?.theme === update.theme && this._config?.svg_theme === update.svg_theme && this._config?.icon_set === update.icon_set && this._config?.card_height === update.card_height;
+    const current = this._config;
+    if (!current) {
+      return false;
+    }
+    const keys = [
+      "entry_id",
+      "theme",
+      "svg_theme",
+      "icon_set",
+      "card_height",
+      "full_height"
+    ];
+    return keys.every((key) => current[key] === update[key]);
   }
 };
 
