@@ -40,6 +40,7 @@ from custom_components.unifi_network_map.renderer import (
     _render_svg_variant,
     _resolve_model_name,
     _select_edges,
+    _split_groups_by_parent,
     _valid_edge_payload,
     _vlan_name_map,
 )
@@ -832,16 +833,33 @@ class TestGroupByVlanRenderOptions:
             )
         return captured
 
+    def _infra_node_types(self) -> dict[str, str]:
+        return {
+            "gw": "gateway",
+            "sw1": "switch",
+            "sw2": "switch",
+            "client-a": "client",
+            "client-b": "client",
+        }
+
     def test_groups_nodes_by_vlan_when_enabled(self) -> None:
         settings = build_settings(group_by_vlan=True)
         vlan_names = {1: "LAN", 20: "Guest"}
         captured = self._captured_render_kwargs(
-            settings, self._edges_with_vlans(), vlan_names
+            settings,
+            self._edges_with_vlans(),
+            vlan_names,
+            self._infra_node_types(),
         )
         assert captured["options"].layout_mode == "grouped"
-        assert set(captured["groups"]) == {"LAN", "Guest"}
-        assert captured["group_order"] == ["LAN", "Guest"]
-        assert captured["group_vlan_ids"] == {"LAN": 1, "Guest": 20}
+        # Each VLAN group is split per physical parent (here one switch
+        # each), so the group name carries that switch's name too.
+        assert set(captured["groups"]) == {"LAN (sw1)", "Guest (sw2)"}
+        assert captured["group_order"] == ["LAN (sw1)", "Guest (sw2)"]
+        assert captured["group_vlan_ids"] == {
+            "LAN (sw1)": 1,
+            "Guest (sw2)": 20,
+        }
 
     def test_disabled_by_default(self) -> None:
         settings = build_settings()
@@ -854,10 +872,13 @@ class TestGroupByVlanRenderOptions:
     def test_also_applies_in_isometric_layout(self) -> None:
         settings = build_settings(group_by_vlan=True, svg_isometric=True)
         captured = self._captured_render_kwargs(
-            settings, self._edges_with_vlans(), {1: "LAN", 20: "Guest"}
+            settings,
+            self._edges_with_vlans(),
+            {1: "LAN", 20: "Guest"},
+            self._infra_node_types(),
         )
         assert captured["options"].layout_mode == "grouped"
-        assert set(captured["groups"]) == {"LAN", "Guest"}
+        assert set(captured["groups"]) == {"LAN (sw1)", "Guest (sw2)"}
 
     def test_no_op_without_vlan_names(self) -> None:
         """A caller that can't resolve VLAN names (vlan_names=None) skips
@@ -875,23 +896,16 @@ class TestGroupByVlanRenderOptions:
         so the VLAN a client-edge heuristic infers for them is arbitrary --
         only client leaves should end up in a VLAN box.
         """
-        node_types = {
-            "gw": "gateway",
-            "sw1": "switch",
-            "sw2": "switch",
-            "client-a": "client",
-            "client-b": "client",
-        }
         settings = build_settings(group_by_vlan=True)
         captured = self._captured_render_kwargs(
             settings,
             self._edges_with_vlans(),
             {1: "LAN", 20: "Guest"},
-            node_types,
+            self._infra_node_types(),
         )
         assert captured["groups"] == {
-            "LAN": ["client-a"],
-            "Guest": ["client-b"],
+            "LAN (sw1)": ["client-a"],
+            "Guest (sw2)": ["client-b"],
         }
 
     def test_falls_back_to_physical_when_only_infrastructure_grouped(
@@ -951,6 +965,61 @@ class TestExcludeInfrastructureFromGroups:
             groups, ["LAN"], {"LAN": 1}, {}
         )
         assert filtered == {"LAN": ["mystery-node"]}
+
+
+class TestSplitGroupsByParent:
+    """Tests for _split_groups_by_parent."""
+
+    def test_splits_one_group_across_two_switches(self) -> None:
+        groups = {"LAN": ["client-a", "client-b"]}
+        edges = [
+            Edge(left="sw1", right="client-a"),
+            Edge(left="sw2", right="client-b"),
+        ]
+        split, order, vlan_ids = _split_groups_by_parent(
+            groups, ["LAN"], {"LAN": 1}, edges
+        )
+        assert split == {"LAN (sw1)": ["client-a"], "LAN (sw2)": ["client-b"]}
+        assert order == ["LAN (sw1)", "LAN (sw2)"]
+        assert vlan_ids == {"LAN (sw1)": 1, "LAN (sw2)": 1}
+
+    def test_keeps_one_group_when_members_share_a_parent(self) -> None:
+        groups = {"LAN": ["client-a", "client-b"]}
+        edges = [
+            Edge(left="sw1", right="client-a"),
+            Edge(left="sw1", right="client-b"),
+        ]
+        split, order, _vlan_ids = _split_groups_by_parent(
+            groups, ["LAN"], {"LAN": 1}, edges
+        )
+        assert split == {"LAN (sw1)": ["client-a", "client-b"]}
+        assert order == ["LAN (sw1)"]
+
+    def test_member_with_no_parent_edge_keeps_plain_group_name(self) -> None:
+        groups = {"LAN": ["orphan"]}
+        split, order, _vlan_ids = _split_groups_by_parent(
+            groups, ["LAN"], {"LAN": 1}, []
+        )
+        assert split == {"LAN": ["orphan"]}
+        assert order == ["LAN"]
+
+    def test_preserves_group_order_across_splits(self) -> None:
+        groups = {"Guest": ["client-c"], "LAN": ["client-a", "client-b"]}
+        edges = [
+            Edge(left="sw1", right="client-a"),
+            Edge(left="sw2", right="client-b"),
+            Edge(left="sw3", right="client-c"),
+        ]
+        _split, order, _vlan_ids = _split_groups_by_parent(
+            groups, ["Guest", "LAN"], {"Guest": 20, "LAN": 1}, edges
+        )
+        assert order == ["Guest (sw3)", "LAN (sw1)", "LAN (sw2)"]
+
+    def test_empty_groups_pass_through(self) -> None:
+        split, order, vlan_ids = _split_groups_by_parent({}, [], {}, [])
+        assert split == {}
+        assert order == []
+        assert vlan_ids == {}
 
 
 class TestRendererErrorHandling:
@@ -1249,7 +1318,7 @@ class TestRenderThemedSvg:
             renderer.render_themed_svg(data, settings, "unifi", None)
 
         assert captured["options"].layout_mode == "grouped"
-        assert set(captured["groups"]) == {"LAN", "Guest"}
+        assert set(captured["groups"]) == {"LAN (gw)", "Guest (gw)"}
 
 
 def test_render_map_fetches_clients_once(
