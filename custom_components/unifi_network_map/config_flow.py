@@ -502,7 +502,6 @@ def _normalize_options(
         CONF_SVG_WIDTH,
         CONF_SVG_HEIGHT,
         CONF_REQUEST_TIMEOUT_SECONDS,
-        CONF_MAX_NODES_PER_ROW,
     ):
         value = cleaned.get(key)
         if value in ("", None):
@@ -523,7 +522,38 @@ def _normalize_options(
                 errors[key] = "expected_int"
                 continue
         errors[key] = "expected_int"
+    _normalize_max_nodes_per_row(cleaned, errors)
     return cleaned, errors
+
+
+def _normalize_max_nodes_per_row(
+    cleaned: dict[str, Any], errors: dict[str, str]
+) -> None:
+    """Validate max_nodes_per_row but keep it a string.
+
+    Its selector is a TextSelector, which rejects a non-string default on
+    the next form render -- unlike CONF_SVG_WIDTH/HEIGHT/REQUEST_TIMEOUT
+    above, whose values are cast to int, this one must round-trip as str.
+    """
+    value = cleaned.get(CONF_MAX_NODES_PER_ROW)
+    if value in ("", None):
+        cleaned.pop(CONF_MAX_NODES_PER_ROW, None)
+        return
+    if isinstance(value, (int, float)):
+        cleaned[CONF_MAX_NODES_PER_ROW] = str(int(value))
+        return
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            cleaned.pop(CONF_MAX_NODES_PER_ROW, None)
+            return
+        try:
+            cleaned[CONF_MAX_NODES_PER_ROW] = str(int(float(stripped)))
+            return
+        except ValueError:
+            errors[CONF_MAX_NODES_PER_ROW] = "expected_int"
+            return
+    errors[CONF_MAX_NODES_PER_ROW] = "expected_int"
 
 
 def _prepare_entry_data(user_input: dict[str, Any]) -> dict[str, Any]:

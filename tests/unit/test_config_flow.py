@@ -251,6 +251,31 @@ def test_options_schema_fields_use_entry_defaults() -> None:
     assert default_value is True
 
 
+def test_max_nodes_per_row_default_stays_string_for_text_selector() -> None:
+    """Regression guard: a non-string default makes HA's TextSelector
+    raise "expected str" the next time the options form renders, which is
+    exactly what happened when this value was stored as an int.
+    """
+    options: dict[str, object] = {CONF_MAX_NODES_PER_ROW: "8"}
+    options_schema_fields = cast(
+        "Callable[[dict[str, object]], dict[str, object]]",
+        getattr(config_flow_module, "_options_schema_fields"),
+    )
+    fields = options_schema_fields(options)
+
+    marker = next(
+        marker
+        for marker in fields
+        if getattr(marker, "schema", None) == CONF_MAX_NODES_PER_ROW
+    )
+    default_value = (
+        marker.default() if callable(marker.default) else marker.default
+    )
+
+    assert isinstance(default_value, str)
+    assert default_value == "8"
+
+
 def test_boolean_selector_returns_instance() -> None:
     boolean_selector = cast(
         "Callable[[], config_flow_module.selector.BooleanSelector]",
@@ -335,8 +360,25 @@ def test_normalize_options_casts_max_nodes_per_row() -> None:
     )
     data, errors = normalize_options(user_input)
 
-    assert data[CONF_MAX_NODES_PER_ROW] == 8
+    # Stored as str, not int: its selector is a TextSelector, which
+    # rejects a non-string default the next time the form is rendered.
+    assert data[CONF_MAX_NODES_PER_ROW] == "8"
+    assert isinstance(data[CONF_MAX_NODES_PER_ROW], str)
     assert errors == {}
+
+
+def test_normalize_options_max_nodes_per_row_invalid_type() -> None:
+    user_input: dict[str, object] = {CONF_MAX_NODES_PER_ROW: {"bad": 1}}
+
+    normalize_options = cast(
+        "Callable["
+        "[dict[str, object]],"
+        " tuple[dict[str, object], dict[str, str]]]",
+        getattr(config_flow_module, "_normalize_options"),
+    )
+    _data, errors = normalize_options(user_input)
+
+    assert errors[CONF_MAX_NODES_PER_ROW] == "expected_int"
 
 
 def test_normalize_options_strips_empty_max_nodes_per_row() -> None:
