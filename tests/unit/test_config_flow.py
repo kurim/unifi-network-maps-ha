@@ -276,6 +276,52 @@ def test_max_nodes_per_row_default_stays_string_for_text_selector() -> None:
     assert default_value == "8"
 
 
+def test_max_nodes_per_row_coerces_stale_stored_int() -> None:
+    """A config entry saved before the str-storage fix (or a previously
+    broken build) may still have an int on disk; the schema default must
+    still come out a str, or the "expected str" bug returns even though
+    _normalize_options itself is already fixed.
+    """
+    options: dict[str, object] = {CONF_MAX_NODES_PER_ROW: 10}
+    options_schema_fields = cast(
+        "Callable[[dict[str, object]], dict[str, object]]",
+        getattr(config_flow_module, "_options_schema_fields"),
+    )
+    fields = options_schema_fields(options)
+
+    marker = next(
+        marker
+        for marker in fields
+        if getattr(marker, "schema", None) == CONF_MAX_NODES_PER_ROW
+    )
+    default_value = (
+        marker.default() if callable(marker.default) else marker.default
+    )
+
+    assert isinstance(default_value, str)
+    assert default_value == "10"
+
+
+def test_max_nodes_per_row_none_stored_value_becomes_empty_string() -> None:
+    options: dict[str, object] = {CONF_MAX_NODES_PER_ROW: None}
+    options_schema_fields = cast(
+        "Callable[[dict[str, object]], dict[str, object]]",
+        getattr(config_flow_module, "_options_schema_fields"),
+    )
+    fields = options_schema_fields(options)
+
+    marker = next(
+        marker
+        for marker in fields
+        if getattr(marker, "schema", None) == CONF_MAX_NODES_PER_ROW
+    )
+    default_value = (
+        marker.default() if callable(marker.default) else marker.default
+    )
+
+    assert default_value == ""
+
+
 def test_boolean_selector_returns_instance() -> None:
     boolean_selector = cast(
         "Callable[[], config_flow_module.selector.BooleanSelector]",

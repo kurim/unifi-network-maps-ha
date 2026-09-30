@@ -13,7 +13,7 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/merlijntishauser/unifi-network-maps-ha/issues",
   "requirements": [
-    "unifi-topology @ git+https://github.com/kurim/unifi-topology.git@afaddd4eca5599b401dfe47aa6a2bc647dce4ea0"
+    "unifi-topology @ git+https://github.com/kurim/unifi-topology.git@bcaa354cced1baa5c45e2c71f8acb43a2a649073"
   ],
   "version": "0.5.11"
 }

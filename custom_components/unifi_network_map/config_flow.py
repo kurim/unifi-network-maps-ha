@@ -326,6 +326,15 @@ def _options_schema_fields(
     def opt(key: str, default: object) -> vol.Optional:
         return vol.Optional(key, default=options.get(key, default))
 
+    def opt_str(key: str, default: str) -> vol.Optional:
+        # A stored value may predate this field's normalization (or come
+        # from an older build), so coerce it to str defensively -- its
+        # TextSelector raises "expected str" on any other type.
+        value = options.get(key, default)
+        return vol.Optional(
+            key, default="" if value in ("", None) else str(value)
+        )
+
     return {
         opt(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES
@@ -351,7 +360,7 @@ def _options_schema_fields(
             CONF_ISO_ROUTE_AROUND_NODES, DEFAULT_ISO_ROUTE_AROUND_NODES
         ): _boolean_selector(),
         opt(CONF_ISO_SHOW_GRID, DEFAULT_ISO_SHOW_GRID): _boolean_selector(),
-        opt(CONF_MAX_NODES_PER_ROW, ""): _text_selector(),
+        opt_str(CONF_MAX_NODES_PER_ROW, ""): _text_selector(),
         opt(CONF_USE_CACHE, DEFAULT_USE_CACHE): _boolean_selector(),
         opt(
             CONF_TRACKED_CLIENTS, DEFAULT_TRACKED_CLIENTS
