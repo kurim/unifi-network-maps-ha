@@ -245,6 +245,41 @@ def _load_networks(
         return []
 
 
+_INFRASTRUCTURE_NODE_TYPES = frozenset({"gateway", "switch", "ap"})
+
+
+def _exclude_infrastructure_from_groups(
+    groups: dict[str, list[str]],
+    group_order: list[str],
+    group_vlan_ids: dict[str, int],
+    node_types: dict[str, str],
+) -> tuple[dict[str, list[str]], list[str], dict[str, int]]:
+    """Keep infrastructure devices (gateway/switch/AP) out of VLAN groups.
+
+    These typically carry traffic for every VLAN on their trunk/uplink
+    ports, so the single VLAN a client-edge heuristic infers for them is
+    arbitrary. Leaving them ungrouped keeps the backbone in its normal
+    position; a dashed cross-group edge still shows each grouped client's
+    real connection back to them.
+    """
+    filtered_groups: dict[str, list[str]] = {}
+    for name, members in groups.items():
+        remaining = [
+            member
+            for member in members
+            if node_types.get(member) not in _INFRASTRUCTURE_NODE_TYPES
+        ]
+        if remaining:
+            filtered_groups[name] = remaining
+    filtered_order = [name for name in group_order if name in filtered_groups]
+    filtered_vlan_ids = {
+        name: vlan_id
+        for name, vlan_id in group_vlan_ids.items()
+        if name in filtered_groups
+    }
+    return filtered_groups, filtered_order, filtered_vlan_ids
+
+
 def _vlan_name_map(
     clients: list[ClientData] | None, networks: list[Mapping[str, Any]]
 ) -> dict[int, str]:
@@ -302,6 +337,11 @@ def _render_svg_variant(
     if settings.group_by_vlan and vlan_names is not None:
         groups, group_order, group_vlan_ids = group_nodes_by_vlan(
             edges, vlan_names
+        )
+        groups, group_order, group_vlan_ids = (
+            _exclude_infrastructure_from_groups(
+                groups, group_order, group_vlan_ids, node_types
+            )
         )
         if groups:
             layout_mode = "grouped"
