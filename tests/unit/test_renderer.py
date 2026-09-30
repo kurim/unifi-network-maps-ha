@@ -764,11 +764,13 @@ class TestIsoRenderOptions:
             iso_lighting=True,
             iso_route_around_nodes=True,
             iso_show_grid=False,
+            max_nodes_per_row=5,
         )
         options = self._captured_options(settings)
         assert options.iso_lighting is True
         assert options.iso_route_around_nodes is True
         assert options.iso_show_grid is False
+        assert options.max_nodes_per_row == 5
 
     def test_default_settings_keep_upstream_svg_options(self) -> None:
         options = self._captured_options(build_settings(svg_isometric=True))

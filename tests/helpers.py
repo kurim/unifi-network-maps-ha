@@ -76,6 +76,7 @@ def build_settings(
     iso_lighting: bool = False,
     iso_route_around_nodes: bool = False,
     iso_show_grid: bool = True,
+    max_nodes_per_row: int | None = None,
 ) -> RenderSettings:
     return RenderSettings(
         include_ports=include_ports,
@@ -90,6 +91,7 @@ def build_settings(
         iso_lighting=iso_lighting,
         iso_route_around_nodes=iso_route_around_nodes,
         iso_show_grid=iso_show_grid,
+        max_nodes_per_row=max_nodes_per_row,
     )
 
 

@@ -1,1 +1,1 @@
-unifi-topology==3.2.1
+unifi-topology @ git+https://github.com/kurim/unifi-topology.git@795a31cef993519060f03919bfe43853243843ba

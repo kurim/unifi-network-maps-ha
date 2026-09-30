@@ -23,6 +23,7 @@ from .const import (
     CONF_ISO_LIGHTING,
     CONF_ISO_ROUTE_AROUND_NODES,
     CONF_ISO_SHOW_GRID,
+    CONF_MAX_NODES_PER_ROW,
     CONF_ONLY_UNIFI,
     CONF_PAYLOAD_CACHE_TTL,
     CONF_REQUEST_TIMEOUT_SECONDS,
@@ -350,6 +351,7 @@ def _options_schema_fields(
             CONF_ISO_ROUTE_AROUND_NODES, DEFAULT_ISO_ROUTE_AROUND_NODES
         ): _boolean_selector(),
         opt(CONF_ISO_SHOW_GRID, DEFAULT_ISO_SHOW_GRID): _boolean_selector(),
+        opt(CONF_MAX_NODES_PER_ROW, ""): _text_selector(),
         opt(CONF_USE_CACHE, DEFAULT_USE_CACHE): _boolean_selector(),
         opt(
             CONF_TRACKED_CLIENTS, DEFAULT_TRACKED_CLIENTS
@@ -496,7 +498,12 @@ def _normalize_options(
 ) -> tuple[dict[str, Any], dict[str, str]]:
     cleaned = dict(user_input)
     errors: dict[str, str] = {}
-    for key in (CONF_SVG_WIDTH, CONF_SVG_HEIGHT, CONF_REQUEST_TIMEOUT_SECONDS):
+    for key in (
+        CONF_SVG_WIDTH,
+        CONF_SVG_HEIGHT,
+        CONF_REQUEST_TIMEOUT_SECONDS,
+        CONF_MAX_NODES_PER_ROW,
+    ):
         value = cleaned.get(key)
         if value in ("", None):
             cleaned.pop(key, None)
