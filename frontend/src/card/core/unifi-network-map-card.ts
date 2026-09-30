@@ -337,16 +337,20 @@ export class UnifiNetworkMapCard extends HTMLElement {
   }
 
   private _applyCardHeight(card: HTMLElement) {
-    if (this.closest("hui-card-edit-mode")) {
+    if (this._config?.full_height || this.closest("hui-card-edit-mode")) {
+      // Stretches to whatever height the dashboard's container already has
+      // (e.g. a Panel view's single-card slot), instead of a fixed px value.
       this.style.height = "100%";
       card.style.height = "100%";
       return;
     }
     const height = normalizeCardHeight(this._config?.card_height);
     if (!height) {
+      this.style.removeProperty("height");
       card.style.removeProperty("height");
       return;
     }
+    this.style.removeProperty("height");
     card.style.height = height;
   }
 

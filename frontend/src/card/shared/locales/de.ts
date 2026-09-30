@@ -29,6 +29,7 @@ export const de = {
   "context_menu.view_ports": "Ports anzeigen",
   "editor.card_height": "Kartenhöhe (optional)",
   "editor.entry_id": "UniFi Network Map-Instanz",
+  "editor.full_height": "Volle Höhe ausfüllen (z. B. für Panel-Ansicht)",
   "editor.no_entries":
     "Keine UniFi Network Map-Integrationen gefunden. Bitte zuerst eine hinzufügen.",
   "editor.theme": "Thema",

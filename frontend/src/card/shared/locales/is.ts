@@ -28,6 +28,7 @@ export const is = {
   "context_menu.view_ports": "Skoða gáttir",
   "editor.card_height": "Hæð spjalds (valfrjálst)",
   "editor.entry_id": "UniFi Network Map tilvik",
+  "editor.full_height": "Fylla alla hæð (t.d. fyrir spjaldsýn)",
   "editor.no_entries": "Engar UniFi Network Map samþættingar fundust. Bættu einni við fyrst.",
   "editor.theme": "Þema",
   "editor.theme.dark": "Dökkt",

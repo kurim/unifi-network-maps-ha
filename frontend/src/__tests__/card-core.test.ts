@@ -107,6 +107,31 @@ describe("unifi-network-map card core", () => {
     expect(element.innerHTML).toContain("&lt;bad&gt;");
   });
 
+  it("stretches host and card to 100% height when full_height is set", () => {
+    const element = document.createElement("unifi-network-map") as ConfigurableCard;
+    element.setConfig({ svg_url: "/map.svg", full_height: true });
+    const card = element.querySelector("ha-card") as HTMLElement;
+    expect(element.style.height).toBe("100%");
+    expect(card.style.height).toBe("100%");
+  });
+
+  it("applies a fixed px height when full_height is not set", () => {
+    const element = document.createElement("unifi-network-map") as ConfigurableCard;
+    element.setConfig({ svg_url: "/map.svg", card_height: 500 });
+    const card = element.querySelector("ha-card") as HTMLElement;
+    expect(element.style.height).toBe("");
+    expect(card.style.height).toBe("500px");
+  });
+
+  it("clears a stale host height after full_height is switched off", () => {
+    const element = document.createElement("unifi-network-map") as ConfigurableCard;
+    element.setConfig({ svg_url: "/map.svg", full_height: true });
+    element.setConfig({ svg_url: "/map.svg", card_height: 300 });
+    const card = element.querySelector("ha-card") as HTMLElement;
+    expect(element.style.height).toBe("");
+    expect(card.style.height).toBe("300px");
+  });
+
   it("starts and stops polling on connect lifecycle", () => {
     jest.useFakeTimers();
     const element = document.createElement("unifi-network-map") as ConfigurableCard;

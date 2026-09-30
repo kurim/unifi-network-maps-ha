@@ -28,6 +28,7 @@ export const en = {
   "context_menu.view_ports": "View Ports",
   "editor.card_height": "Card height (optional)",
   "editor.entry_id": "UniFi Network Map Instance",
+  "editor.full_height": "Fill full height (e.g. for Panel view)",
   "editor.no_entries": "No UniFi Network Map integrations found. Please add one first.",
   "editor.theme": "Theme",
   "editor.theme.dark": "Dark",

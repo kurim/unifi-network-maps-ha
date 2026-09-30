@@ -28,6 +28,7 @@ export const sv = {
   "context_menu.view_ports": "Visa portar",
   "editor.card_height": "Korthöjd (valfritt)",
   "editor.entry_id": "UniFi Network Map-instans",
+  "editor.full_height": "Fyll hela höjden (t.ex. för panelvy)",
   "editor.no_entries": "Inga UniFi Network Map-integrationer hittades. Lägg till en först.",
   "editor.theme": "Tema",
   "editor.theme.dark": "Mörkt",

@@ -28,6 +28,7 @@ export const da = {
   "context_menu.view_ports": "Vis porte",
   "editor.card_height": "Korthøjde (valgfrit)",
   "editor.entry_id": "UniFi Network Map-instans",
+  "editor.full_height": "Udfyld fuld højde (f.eks. til panelvisning)",
   "editor.no_entries": "Ingen UniFi Network Map-integrationer fundet. Tilføj venligst en først.",
   "editor.theme": "Tema",
   "editor.theme.dark": "Mørk",

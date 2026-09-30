@@ -1,7 +1,11 @@
 import type { CardConfig, ConfigEntry, FormSchemaEntry } from "../core/types";
 import type { LocalizeFunc } from "./localize";
 
-export function buildFormSchema(entries: ConfigEntry[], localize: LocalizeFunc): FormSchemaEntry[] {
+export function buildFormSchema(
+  entries: ConfigEntry[],
+  localize: LocalizeFunc,
+  fullHeight?: boolean,
+): FormSchemaEntry[] {
   const entryOptions = entries.map((entry) => ({
     label: entry.title,
     value: entry.entry_id,
@@ -60,6 +64,7 @@ export function buildFormSchema(entries: ConfigEntry[], localize: LocalizeFunc):
     },
     {
       name: "card_height",
+      disabled: fullHeight,
       selector: {
         text: {
           type: "text",
@@ -67,6 +72,11 @@ export function buildFormSchema(entries: ConfigEntry[], localize: LocalizeFunc):
         },
       },
       label: localize("editor.card_height"),
+    },
+    {
+      name: "full_height",
+      selector: { boolean: {} },
+      label: localize("editor.full_height"),
     },
   ];
 }
