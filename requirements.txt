@@ -1,1 +1,1 @@
-unifi-topology @ git+https://github.com/kurim/unifi-topology.git@978d9f28908d24ef9bafb99f09f1b19e393d80fa
+unifi-topology @ git+https://github.com/kurim/unifi-topology.git@449d743179c37363489ee769fea4715e2ae65432

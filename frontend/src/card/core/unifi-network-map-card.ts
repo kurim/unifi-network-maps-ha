@@ -38,6 +38,7 @@ import {
   setHoveredNode,
 } from "../interaction/selection";
 import {
+  applyGroupFilters,
   createFilterState,
   enableFilter,
   normalizeDeviceType,
@@ -972,6 +973,9 @@ export class UnifiNetworkMapCard extends HTMLElement {
   }
 
   private _applyEdgeFilters(svg: SVGElement, hiddenNodes: Set<string>): void {
+    for (const groupEdgeId of applyGroupFilters(svg, hiddenNodes)) {
+      hiddenNodes.add(groupEdgeId);
+    }
     const edgePaths = svg.querySelectorAll("path[data-edge-left][data-edge-right]");
     const filteredEdges = new Set<string>();
 

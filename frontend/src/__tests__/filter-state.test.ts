@@ -1,4 +1,5 @@
 import {
+  applyGroupFilters,
   createFilterState,
   toggleFilter,
   enableFilter,
@@ -103,5 +104,47 @@ describe("filter-state", () => {
       expect(normalizeDeviceType("")).toBe("other");
       expect(normalizeDeviceType("firewall")).toBe("other");
     });
+  });
+});
+
+describe("applyGroupFilters", () => {
+  const buildSvg = (): SVGElement => {
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg">
+      <g class="network-group" data-group-name="LAN (sw1)"></g>
+      <g class="network-group" data-group-name="IoT (sw1)"></g>
+      <g data-node-id="a" data-group="LAN (sw1)"></g>
+      <g data-node-id="b" data-group="LAN (sw1)"></g>
+      <g data-node-id="c" data-group="IoT (sw1)"></g>
+    </svg>`;
+    return wrapper.querySelector("svg") as SVGElement;
+  };
+
+  it("hides a box and returns its edge id once every member is hidden", () => {
+    const svg = buildSvg();
+    const hidden = applyGroupFilters(svg, new Set(["a", "b"]));
+    expect([...hidden]).toEqual(["::group::LAN (sw1)"]);
+    const boxes = svg.querySelectorAll(".network-group");
+    expect(boxes[0].classList.contains("group--filtered")).toBe(true);
+    expect(boxes[1].classList.contains("group--filtered")).toBe(false);
+  });
+
+  it("keeps a box with at least one visible member", () => {
+    const svg = buildSvg();
+    expect(applyGroupFilters(svg, new Set(["a"])).size).toBe(0);
+    expect(svg.querySelector(".group--filtered")).toBeNull();
+  });
+
+  it("shows the box again when the filter is switched back", () => {
+    const svg = buildSvg();
+    applyGroupFilters(svg, new Set(["a", "b"]));
+    applyGroupFilters(svg, new Set());
+    expect(svg.querySelector(".group--filtered")).toBeNull();
+  });
+
+  it("ignores boxes without tagged members", () => {
+    const svg = buildSvg();
+    svg.insertAdjacentHTML("beforeend", '<g class="network-group" data-group-name="Empty"></g>');
+    expect(applyGroupFilters(svg, new Set(["a", "b", "c"])).has("::group::Empty")).toBe(false);
   });
 });

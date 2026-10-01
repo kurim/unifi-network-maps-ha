@@ -2972,6 +2972,25 @@ function normalizeDeviceType(type) {
   }
   return "other";
 }
+var GROUP_EDGE_PREFIX = "::group::";
+function applyGroupFilters(svg3, hiddenNodes) {
+  const members = /* @__PURE__ */ new Map();
+  svg3.querySelectorAll("[data-node-id][data-group]").forEach((element) => {
+    const group = element.getAttribute("data-group");
+    const nodeId = element.getAttribute("data-node-id");
+    if (!group || !nodeId) return;
+    members.set(group, [...members.get(group) ?? [], nodeId]);
+  });
+  const hiddenGroupEdges = /* @__PURE__ */ new Set();
+  svg3.querySelectorAll(".network-group[data-group-name]").forEach((box) => {
+    const name = box.getAttribute("data-group-name") ?? "";
+    const ids = members.get(name) ?? [];
+    const hidden = ids.length > 0 && ids.every((id) => hiddenNodes.has(id));
+    box.classList.toggle("group--filtered", hidden);
+    if (hidden) hiddenGroupEdges.add(`${GROUP_EDGE_PREFIX}${name}`);
+  });
+  return hiddenGroupEdges;
+}
 
 // src/card/ui/panel.ts
 function renderPanelContent(context, helpers) {
@@ -6061,7 +6080,8 @@ var CARD_STYLES = `
 
   /* Filtered nodes and edges */
   .unifi-network-map__viewport > svg .node--filtered,
-  .unifi-network-map__viewport > svg .edge--filtered {
+  .unifi-network-map__viewport > svg .edge--filtered,
+  .unifi-network-map__viewport > svg .group--filtered {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
@@ -7470,6 +7490,9 @@ var UnifiNetworkMapCard = class extends HTMLElement {
     this._applyEdgeFilters(svg3, hiddenNodes);
   }
   _applyEdgeFilters(svg3, hiddenNodes) {
+    for (const groupEdgeId of applyGroupFilters(svg3, hiddenNodes)) {
+      hiddenNodes.add(groupEdgeId);
+    }
     const edgePaths = svg3.querySelectorAll("path[data-edge-left][data-edge-right]");
     const filteredEdges = /* @__PURE__ */ new Set();
     for (const path of edgePaths) {

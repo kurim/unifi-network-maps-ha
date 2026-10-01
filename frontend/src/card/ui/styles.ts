@@ -444,7 +444,8 @@ export const CARD_STYLES = `
 
   /* Filtered nodes and edges */
   .unifi-network-map__viewport > svg .node--filtered,
-  .unifi-network-map__viewport > svg .edge--filtered {
+  .unifi-network-map__viewport > svg .edge--filtered,
+  .unifi-network-map__viewport > svg .group--filtered {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
