@@ -6269,22 +6269,20 @@ var CARD_STYLES = `
   .panel-hint { display: flex; align-items: center; gap: 8px; padding: 12px; margin: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; color: #94a3b8; font-size: 12px; }
   .panel-hint__icon { font-size: 14px; }
 
-  /* Selected node highlight */
+  /* Selected node highlight: an amber ring that stays visible on the blue,
+     green, purple and red node cards alike, leaving the card's own text and
+     icon colours untouched. */
   .unifi-network-map__viewport > svg [data-selected="true"],
   .unifi-network-map__viewport > svg .node--selected {
-    filter: none;
+    filter: drop-shadow(0 0 3px #fbbf24) drop-shadow(0 0 8px rgba(251, 191, 36, 0.7));
   }
-  .unifi-network-map__viewport > svg [data-selected="true"] > *,
-  .unifi-network-map__viewport > svg .node--selected > * {
-    stroke: #3b82f6 !important;
-    stroke-width: 2.5px;
+  .unifi-network-map__viewport > svg [data-selected="true"] > rect,
+  .unifi-network-map__viewport > svg [data-selected="true"] > polygon,
+  .unifi-network-map__viewport > svg .node--selected > rect,
+  .unifi-network-map__viewport > svg .node--selected > polygon {
+    stroke: #fbbf24 !important;
+    stroke-width: 3px;
     stroke-linejoin: round;
-    stroke-linecap: round;
-  }
-  .unifi-network-map__viewport > svg [data-selected="true"] text,
-  .unifi-network-map__viewport > svg .node--selected text {
-    stroke: none !important;
-    fill: #3b82f6 !important;
   }
 
   /* Light theme overrides */
@@ -6391,10 +6389,6 @@ var CARD_STYLES = `
   ha-card[data-theme="unifi"] .badge--poe { background: rgba(0, 168, 107, 0.1); color: #00a86b; }
   ha-card[data-theme="unifi"] .badge--poe-inactive { background: #f3f4f6; color: #9ca3af; }
   ha-card[data-theme="unifi"] .badge--port { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
-  ha-card[data-theme="unifi"] .unifi-network-map__viewport > svg [data-selected="true"] > *,
-  ha-card[data-theme="unifi"] .unifi-network-map__viewport > svg .node--selected > * { stroke: #006fff !important; }
-  ha-card[data-theme="unifi"] .unifi-network-map__viewport > svg [data-selected="true"] text,
-  ha-card[data-theme="unifi"] .unifi-network-map__viewport > svg .node--selected text { stroke: none !important; fill: #006fff !important; }
   ha-card[data-theme="unifi"] .filter-bar { background: #ffffff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
   ha-card[data-theme="unifi"] .filter-button { background: #f9fafb; border: 1px solid #e5e7eb; color: #374151; }
   ha-card[data-theme="unifi"] .filter-button:hover { background: #f3f4f6; border-color: #006fff; color: #006fff; }
@@ -6453,10 +6447,6 @@ var CARD_STYLES = `
   ha-card[data-theme="unifi-dark"] .badge--poe { background: rgba(0, 168, 107, 0.15); color: #00d68f; }
   ha-card[data-theme="unifi-dark"] .badge--poe-inactive { background: #1f1f1f; color: #6b7280; }
   ha-card[data-theme="unifi-dark"] .badge--port { background: #1f1f1f; color: #9ca3af; border: 1px solid #2a2a2a; }
-  ha-card[data-theme="unifi-dark"] .unifi-network-map__viewport > svg [data-selected="true"] > *,
-  ha-card[data-theme="unifi-dark"] .unifi-network-map__viewport > svg .node--selected > * { stroke: #006fff !important; }
-  ha-card[data-theme="unifi-dark"] .unifi-network-map__viewport > svg [data-selected="true"] text,
-  ha-card[data-theme="unifi-dark"] .unifi-network-map__viewport > svg .node--selected text { stroke: none !important; fill: #3b9eff !important; }
   ha-card[data-theme="unifi-dark"] .filter-bar { background: #1a1a1a; border: 1px solid #2a2a2a; }
   ha-card[data-theme="unifi-dark"] .filter-button { background: #151515; border: 1px solid #2a2a2a; color: #e5e5e5; }
   ha-card[data-theme="unifi-dark"] .filter-button:hover { background: #252525; border-color: #006fff; color: #3b9eff; }

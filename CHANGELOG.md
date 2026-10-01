@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **EXPERIMENTAL, testing only -- not for release:** new map option "Max devices per row" (`max_nodes_per_row`). Wraps device/client groups wider than this count into multiple rows instead of one long row, in both the standard and (non-compact) isometric layouts, also inside VLAN boxes. Requires `unifi-topology`'s not-yet-released `max_nodes_per_row` and grouped-tree support, so `manifest.json`/`requirements.txt` temporarily point at a `kurim/unifi-topology@claude/max-nodes-per-row` commit instead of a PyPI release. Revert the requirement pin to a released `unifi-topology` version once that branch is reviewed and published, or drop this entry entirely if it doesn't land
 - New card option "Fill full height" (`full_height`, off by default). Stretches the card to whatever height its dashboard container already provides instead of a fixed pixel value -- most useful for a Panel (single card) view, where the card previously stayed at its content height rather than filling the viewport
 
+### Fixed
+- "Group by VLAN" put clients into an "Unassigned" box when their connection carried no VLAN tag (typical for wired clients), even though the detail panel showed their VLAN. Clients are now grouped by the VLAN the controller reports for them, the same value the panel shows; the edge's VLAN tag only stands in when that is unknown. Box labels also name the parent device (e.g. "Neotokyo (USW Ultra)") instead of its MAC address
+- The selected node was highlighted in blue, which disappeared on the blue node cards (blue border, blue label). The selection is now an amber ring that keeps the card's own text and icon colours and stays visible on every card colour
+
 ### Changed
 - The card bundle's Lovelace resource URL is now versioned with a hash of the bundle's contents instead of its file modification time, so an update that keeps timestamps (archive extraction, copied files) still makes browsers fetch the new card instead of serving the previous one
 
