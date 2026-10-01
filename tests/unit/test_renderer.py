@@ -32,7 +32,6 @@ from custom_components.unifi_network_map.renderer import (
     _client_vlan_from_network_name,
     _edge_from_payload,
     _edge_to_dict,
-    _exclude_infrastructure_from_groups,
     _extract_wan_info,
     _is_default_vlan_name,
     _network_name,
@@ -40,7 +39,6 @@ from custom_components.unifi_network_map.renderer import (
     _render_svg_variant,
     _resolve_model_name,
     _select_edges,
-    _split_groups_by_parent,
     _valid_edge_payload,
     _vlan_name_map,
 )
@@ -807,6 +805,7 @@ class TestGroupByVlanRenderOptions:
         edges: list[Edge],
         vlan_names: dict[int, str] | None,
         node_types: dict[str, str] | None = None,
+        node_vlans: dict[str, int | None] | None = None,
     ) -> dict[str, Any]:
         captured: dict[str, Any] = {}
 
@@ -830,6 +829,7 @@ class TestGroupByVlanRenderOptions:
                 None,
                 None,
                 vlan_names,
+                node_vlans,
             )
         return captured
 
@@ -908,6 +908,28 @@ class TestGroupByVlanRenderOptions:
             "Guest (sw2)": ["client-b"],
         }
 
+    def test_uses_the_clients_own_vlan_when_edges_carry_no_tags(self) -> None:
+        """Regression: wired clients' edges often have no VLAN tags, which
+        left them in "Unassigned" although the detail panel (fed by the
+        client's VLAN) showed their VLAN.
+        """
+        edges = [
+            Edge(left="gw", right="sw1"),
+            Edge(left="sw1", right="client-a"),
+            Edge(left="sw1", right="client-b"),
+        ]
+        settings = build_settings(group_by_vlan=True)
+        captured = self._captured_render_kwargs(
+            settings,
+            edges,
+            {1: "Neotokyo"},
+            self._infra_node_types(),
+            {"client-a": 1, "client-b": 1},
+        )
+        assert captured["groups"] == {
+            "Neotokyo (sw1)": ["client-a", "client-b"]
+        }
+
     def test_falls_back_to_physical_when_only_infrastructure_grouped(
         self,
     ) -> None:
@@ -922,104 +944,6 @@ class TestGroupByVlanRenderOptions:
         )
         assert captured["options"].layout_mode == "physical"
         assert "groups" not in captured
-
-
-class TestExcludeInfrastructureFromGroups:
-    """Tests for _exclude_infrastructure_from_groups."""
-
-    def test_removes_gateway_switch_and_ap_from_groups(self) -> None:
-        groups = {
-            "LAN": ["gw", "sw1", "client-a"],
-            "Guest": ["ap1", "client-b"],
-        }
-        node_types = {
-            "gw": "gateway",
-            "sw1": "switch",
-            "ap1": "ap",
-            "client-a": "client",
-            "client-b": "client",
-        }
-        filtered, order, vlan_ids = _exclude_infrastructure_from_groups(
-            groups, ["LAN", "Guest"], {"LAN": 1, "Guest": 20}, node_types
-        )
-        assert filtered == {"LAN": ["client-a"], "Guest": ["client-b"]}
-        assert order == ["LAN", "Guest"]
-        assert vlan_ids == {"LAN": 1, "Guest": 20}
-
-    def test_drops_group_left_empty_after_filtering(self) -> None:
-        groups = {"Infra": ["gw", "sw1"], "LAN": ["client-a"]}
-        node_types = {"gw": "gateway", "sw1": "switch", "client-a": "client"}
-        filtered, order, vlan_ids = _exclude_infrastructure_from_groups(
-            groups, ["Infra", "LAN"], {"Infra": 1, "LAN": 20}, node_types
-        )
-        assert filtered == {"LAN": ["client-a"]}
-        assert order == ["LAN"]
-        assert vlan_ids == {"LAN": 20}
-
-    def test_unknown_node_type_is_kept(self) -> None:
-        """A node missing from node_types (defensive default) is treated
-        as non-infrastructure rather than silently dropped.
-        """
-        groups = {"LAN": ["mystery-node"]}
-        filtered, _order, _vlan_ids = _exclude_infrastructure_from_groups(
-            groups, ["LAN"], {"LAN": 1}, {}
-        )
-        assert filtered == {"LAN": ["mystery-node"]}
-
-
-class TestSplitGroupsByParent:
-    """Tests for _split_groups_by_parent."""
-
-    def test_splits_one_group_across_two_switches(self) -> None:
-        groups = {"LAN": ["client-a", "client-b"]}
-        edges = [
-            Edge(left="sw1", right="client-a"),
-            Edge(left="sw2", right="client-b"),
-        ]
-        split, order, vlan_ids = _split_groups_by_parent(
-            groups, ["LAN"], {"LAN": 1}, edges
-        )
-        assert split == {"LAN (sw1)": ["client-a"], "LAN (sw2)": ["client-b"]}
-        assert order == ["LAN (sw1)", "LAN (sw2)"]
-        assert vlan_ids == {"LAN (sw1)": 1, "LAN (sw2)": 1}
-
-    def test_keeps_one_group_when_members_share_a_parent(self) -> None:
-        groups = {"LAN": ["client-a", "client-b"]}
-        edges = [
-            Edge(left="sw1", right="client-a"),
-            Edge(left="sw1", right="client-b"),
-        ]
-        split, order, _vlan_ids = _split_groups_by_parent(
-            groups, ["LAN"], {"LAN": 1}, edges
-        )
-        assert split == {"LAN (sw1)": ["client-a", "client-b"]}
-        assert order == ["LAN (sw1)"]
-
-    def test_member_with_no_parent_edge_keeps_plain_group_name(self) -> None:
-        groups = {"LAN": ["orphan"]}
-        split, order, _vlan_ids = _split_groups_by_parent(
-            groups, ["LAN"], {"LAN": 1}, []
-        )
-        assert split == {"LAN": ["orphan"]}
-        assert order == ["LAN"]
-
-    def test_preserves_group_order_across_splits(self) -> None:
-        groups = {"Guest": ["client-c"], "LAN": ["client-a", "client-b"]}
-        edges = [
-            Edge(left="sw1", right="client-a"),
-            Edge(left="sw2", right="client-b"),
-            Edge(left="sw3", right="client-c"),
-        ]
-        _split, order, _vlan_ids = _split_groups_by_parent(
-            groups, ["Guest", "LAN"], {"Guest": 20, "LAN": 1}, edges
-        )
-        assert order == ["Guest (sw3)", "LAN (sw1)", "LAN (sw2)"]
-
-    def test_empty_groups_pass_through(self) -> None:
-        split, order, vlan_ids = _split_groups_by_parent({}, [], {}, [])
-        assert split == {}
-        assert order == []
-        assert vlan_ids == {}
 
 
 class TestRendererErrorHandling:

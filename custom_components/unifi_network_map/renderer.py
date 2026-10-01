@@ -29,11 +29,11 @@ from unifi_topology import (
     render_svg,
     render_svg_isometric,
 )
-from unifi_topology.model import group_nodes_by_vlan
 
 from .const import LOGGER, PAYLOAD_SCHEMA_VERSION, UNIFI_MODEL_NAMES
 from .data import UniFiNetworkMapData
 from .errors import UniFiNetworkMapError
+from .vlan_groups import build_vlan_groups
 
 
 @dataclass(frozen=True)
@@ -141,6 +141,7 @@ def _render_map(
         vpn_tunnels,
         node_names,
         vlan_names,
+        _build_node_vlan_index(clients, networks),
     )
     payload = _build_payload(
         edges,
@@ -245,80 +246,6 @@ def _load_networks(
         return []
 
 
-_INFRASTRUCTURE_NODE_TYPES = frozenset({"gateway", "switch", "ap"})
-
-
-def _exclude_infrastructure_from_groups(
-    groups: dict[str, list[str]],
-    group_order: list[str],
-    group_vlan_ids: dict[str, int],
-    node_types: dict[str, str],
-) -> tuple[dict[str, list[str]], list[str], dict[str, int]]:
-    """Keep infrastructure devices (gateway/switch/AP) out of VLAN groups.
-
-    These typically carry traffic for every VLAN on their trunk/uplink
-    ports, so the single VLAN a client-edge heuristic infers for them is
-    arbitrary. Leaving them ungrouped keeps them as plain tree nodes with
-    no box; each grouped client stays in the tree right under its parent.
-    """
-    filtered_groups: dict[str, list[str]] = {}
-    for name, members in groups.items():
-        remaining = [
-            member
-            for member in members
-            if node_types.get(member) not in _INFRASTRUCTURE_NODE_TYPES
-        ]
-        if remaining:
-            filtered_groups[name] = remaining
-    filtered_order = [name for name in group_order if name in filtered_groups]
-    filtered_vlan_ids = {
-        name: vlan_id
-        for name, vlan_id in group_vlan_ids.items()
-        if name in filtered_groups
-    }
-    return filtered_groups, filtered_order, filtered_vlan_ids
-
-
-def _build_immediate_parent_map(edges: list[Edge]) -> dict[str, str]:
-    """Map each node to its immediate physical parent."""
-    return {edge.right: edge.left for edge in edges}
-
-
-def _split_groups_by_parent(
-    groups: dict[str, list[str]],
-    group_order: list[str],
-    group_vlan_ids: dict[str, int],
-    edges: list[Edge],
-) -> tuple[dict[str, list[str]], list[str], dict[str, int]]:
-    """Split each VLAN group by each member's immediate physical parent.
-
-    group_nodes_by_vlan groups purely by VLAN membership across the whole
-    network, so clients plugged into different switches/APs land in one
-    combined group -- a "VLAN 1" box spanning unrelated switches, which
-    cannot sit under any single parent in the tree. Splitting by (VLAN,
-    immediate parent) gives each switch or AP its own box per VLAN, placed
-    directly beneath it.
-    """
-    parent_of = _build_immediate_parent_map(edges)
-    split_groups: dict[str, list[str]] = {}
-    split_order: list[str] = []
-    split_vlan_ids: dict[str, int] = {}
-    for name in group_order:
-        members = groups.get(name, [])
-        if not members:
-            continue
-        by_parent: dict[str, list[str]] = {}
-        for member in members:
-            by_parent.setdefault(parent_of.get(member, ""), []).append(member)
-        for parent in sorted(by_parent):
-            sub_name = f"{name} ({parent})" if parent else name
-            split_groups[sub_name] = by_parent[parent]
-            split_order.append(sub_name)
-            if name in group_vlan_ids:
-                split_vlan_ids[sub_name] = group_vlan_ids[name]
-    return split_groups, split_order, split_vlan_ids
-
-
 def _vlan_name_map(
     clients: list[ClientData] | None, networks: list[Mapping[str, Any]]
 ) -> dict[int, str]:
@@ -337,6 +264,7 @@ def _render_svg(
     vpn_tunnels: list[VpnTunnel] | None = None,
     node_names: dict[str, str] | None = None,
     vlan_names: dict[int, str] | None = None,
+    node_vlans: Mapping[str, int | None] | None = None,
 ) -> str:
     LOGGER.debug(
         "renderer svg_render_started"
@@ -358,6 +286,7 @@ def _render_svg(
         wan_info,
         vpn_tunnels,
         vlan_names,
+        node_vlans,
     )
 
 
@@ -370,26 +299,19 @@ def _render_svg_variant(
     wan_info: WanInfo | None,
     vpn_tunnels: list[VpnTunnel] | None,
     vlan_names: dict[int, str] | None = None,
+    node_vlans: Mapping[str, int | None] | None = None,
 ) -> str:
     layout_mode = "physical"
     render_kwargs: dict[str, Any] = {}
     if settings.group_by_vlan and vlan_names is not None:
-        groups, group_order, group_vlan_ids = group_nodes_by_vlan(
-            edges, vlan_names
+        vlan_groups = build_vlan_groups(
+            edges, node_types, node_names, vlan_names, node_vlans
         )
-        groups, group_order, group_vlan_ids = (
-            _exclude_infrastructure_from_groups(
-                groups, group_order, group_vlan_ids, node_types
-            )
-        )
-        groups, group_order, group_vlan_ids = _split_groups_by_parent(
-            groups, group_order, group_vlan_ids, edges
-        )
-        if groups:
+        if vlan_groups.groups:
             layout_mode = "grouped"
-            render_kwargs["groups"] = groups
-            render_kwargs["group_order"] = group_order
-            render_kwargs["group_vlan_ids"] = group_vlan_ids
+            render_kwargs["groups"] = vlan_groups.groups
+            render_kwargs["group_order"] = vlan_groups.order
+            render_kwargs["group_vlan_ids"] = vlan_groups.vlan_ids
     options = SvgOptions(
         width=settings.svg_width,
         height=settings.svg_height,
@@ -446,6 +368,7 @@ def render_themed_svg(
         data.wan_info,
         data.vpn_tunnels,
         vlan_names,
+        _node_vlans_from_payload(payload),
     )
     return svg, background
 
@@ -467,6 +390,18 @@ def _vlan_names_from_payload(payload: Mapping[str, Any]) -> dict[int, str]:
             str(name) if isinstance(name, str) else f"VLAN {vlan_id}"
         )
     return names
+
+
+def _node_vlans_from_payload(
+    payload: Mapping[str, Any],
+) -> dict[str, int | None]:
+    node_vlans = payload.get("node_vlans")
+    if not isinstance(node_vlans, dict):
+        return {}
+    return {
+        str(mac): vlan if isinstance(vlan, int) else None
+        for mac, vlan in cast("dict[object, object]", node_vlans).items()
+    }
 
 
 def _payload_str_dict(value: object) -> dict[str, str]:
